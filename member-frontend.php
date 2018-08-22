@@ -25,7 +25,9 @@ class MemberFrontend
 
     public function __construct()
     {
-        $this->redirectURL =(isset($_REQUEST['redirect_to'])) ? $_REQUEST['redirect_to'] : $_SERVER['HTTP_REFERER'];
+        $this->redirectURL = isset($_REQUEST['redirect_to'])
+            ? $_REQUEST['redirect_to']
+            : (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '');
 
         // Call the actions/hooks
         add_action('wp_login_failed', array($this, 'interceptFrontendFailedLoginURL'));
@@ -42,7 +44,7 @@ class MemberFrontend
      */
     public function removeAdminBar() {
         if (!current_user_can('administrator') && !is_admin()) {
-          show_admin_bar(false);
+            show_admin_bar(false);
         }
     }
 
@@ -57,8 +59,8 @@ class MemberFrontend
             && !strstr($this->redirectURL, 'wp-login')
             && !strstr($this->redirectURL,'wp-admin')
         ) {
-           wp_redirect($this->redirectURL . '/?message-error=failed');
-           exit;
+            wp_redirect($this->redirectURL . '/?message-error=failed');
+            exit;
         }
     }
 
@@ -78,6 +80,7 @@ class MemberFrontend
 
     /**
      * Display the login form - used by a shortcode [member-dashboard]
+     * @param string $type
      * @return str - html form
      */
     public function displayMemberDashboard($type = '') {
@@ -89,12 +92,19 @@ class MemberFrontend
 
         } else {
             // Show sign up Form
-            if (isset($type) && $type === 'register') {
+            if ($type === 'register') {
                 $this->includeTemplate('register.php');
-
-            // Show login form
             } else {
-                $this->includeTemplate('login.php');
+
+                $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : null;
+
+                if (!$action) {
+                    $this->includeTemplate('login.php');
+                } elseif ($action === 'forgot') {
+                    $this->includeTemplate('forgot.php');
+                } elseif ($action === 'reset') {
+                    $this->includeTemplate('reset.php');
+                }
             }
         }
 
@@ -124,9 +134,40 @@ class MemberFrontend
                 case 'register' :
                     return $this->register();
                     break;
-            }
+                case 'forgot' :
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        $this->forgot();
+                    }
+                    break;
+                case 'reset' :
 
-            exit;
+                    // Check password reset key is valid
+                    $key = isset($_REQUEST['key']) ? $_REQUEST['key'] : null;
+                    $login = isset($_REQUEST['login']) ? $_REQUEST['login'] : null;
+                    $user = null;
+
+                    if (isset($key, $login)) {
+                        $user = check_password_reset_key($key, $login);
+                    }
+
+                    // If password reset key is invalid display an error
+                    if ( is_wp_error( $user ) || $user === null ) {
+                        $this->redirectURL = esc_url(
+                            remove_query_arg(['action', 'key', 'login'],
+                                add_query_arg('message-error', 'token_expired')
+                            )
+                        );
+
+                        wp_redirect($this->redirectURL);
+                        exit;
+                    }
+
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        $this->reset();
+                    }
+
+                    break;
+            }
         }
     }
 
@@ -216,6 +257,76 @@ class MemberFrontend
         }
 
         wp_redirect($this->redirectURL);
+    }
+
+    /**
+     * Send Password Reset Email
+     */
+    public function forgot()
+    {
+        $user_login = isset($_POST['user_login']) ? sanitize_text_field($_POST['user_login']) : '';
+        $user_data = get_user_by('login', $user_login);
+
+        if ($user_data !== false) {
+
+            $user_login = $user_data->user_login;
+            $user_email = $user_data->user_email;
+            $key = get_password_reset_key($user_data);
+
+            $site_name = wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
+
+            $message = __('Someone has requested a password reset for the following account:') . "\r\n\r\n";
+            $message .= sprintf(__('Site Name: %s'), $site_name) . "\r\n\r\n";
+            $message .= sprintf(__('Username: %s'), $user_login) . "\r\n\r\n";
+            $message .= __('If this was a mistake, just ignore this email and nothing will happen.') . "\r\n\r\n";
+            $message .= __('To reset your password, visit the following address:') . "\r\n\r\n";
+            $message .= '<' . $this->redirectURL . "?action=reset&key={$key}&login={$user_login}>\r\n";
+
+            /* translators: Password reset email subject. %s: Site name */
+            $title = sprintf(__('[%s] Password Reset'), $site_name);
+            $title = apply_filters('retrieve_password_title', $title, $user_login, $user_data);
+
+            $message = apply_filters('retrieve_password_message', $message, $key, $user_login, $user_data);
+
+            wp_mail($user_email, wp_specialchars_decode($title), $message);
+        }
+
+        $this->redirectURL = esc_url(add_query_arg('message-success', 'password_reset_sent', $this->redirectURL));
+
+        wp_redirect($this->redirectURL);
+        exit;
+    }
+
+    /**
+     * Reset Password
+     */
+    public function reset() {
+        $username = isset($_POST['login']) ? sanitize_text_field($_POST['login']) : '';
+        $user = get_user_by('login', $username);
+
+        if ($user !== false) {
+            $newPassword = isset($_POST['pass1']) ? $_POST['pass1'] : '';
+            $newPasswordCheck = isset($_POST['pass2']) ? $_POST['pass2'] : '';
+
+            if ($this->validatePassword($newPassword, $newPasswordCheck)) {
+                reset_password($user, $newPassword);
+            } else {
+
+                $this->redirectURL = esc_url_raw(add_query_arg('action', 'reset', $this->redirectURL));
+                $this->redirectURL = esc_url_raw(add_query_arg('key', $_POST['key'], $this->redirectURL));
+                $this->redirectURL = esc_url_raw(add_query_arg('login', $_POST['login'], $this->redirectURL));
+
+                wp_redirect($this->redirectURL);
+                exit;
+            }
+
+            $this->redirectURL = esc_url(add_query_arg('message-success', 'password_reset', $this->redirectURL));
+        } else {
+            $this->redirectURL = esc_url(add_query_arg('message-error', 'user_not_found', $this->redirectURL));
+        }
+
+        wp_redirect($this->redirectURL);
+        exit;
     }
 
     /**

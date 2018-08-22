@@ -9,6 +9,18 @@
     <div class="callout alert"><h5>Sorry, login failed</h5></div>
 <?php endif; ?>
 
+<?php if (isset($_GET['message-error']) && $_GET['message-error'] == 'token_expired') : ?>
+    <div class="callout alert"><h5>Password reset token has expired</h5></div>
+<?php endif; ?>
+
+<?php if (isset($_GET['message-success']) && $_GET['message-success'] == 'password_reset_sent') : ?>
+    <div class="callout alert"><h5>Check your email for the confirmation link</h5></div>
+<?php endif; ?>
+
+<?php if (isset($_GET['message-success']) && $_GET['message-success'] == 'password_reset') : ?>
+    <div class="callout alert"><h5>Your password has successfully reset</h5></div>
+<?php endif; ?>
+
 <?php
     // Login form arguments.
     $args = array(
@@ -29,3 +41,5 @@
     );
     wp_login_form( $args );
 ?>
+
+<a href="<?php echo get_permalink() . '?action=forgot'; ?>">Forgot your password?</a>
