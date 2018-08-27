@@ -187,7 +187,7 @@ class MemberFrontend
         // Username Validation
         $userData['username'] = $userData['user_email'];
         if (username_exists($userData['username'])) {
-            $this->redirectURL = esc_url(add_query_arg('message-error', 'username/email is already in use', $url));
+            $this->redirectURL = esc_url(add_query_arg('message-error', 'username/email is already in use', $this->redirectURL));
             return wp_redirect($this->redirectURL);
         }
 
