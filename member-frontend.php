@@ -265,6 +265,15 @@ class MemberFrontend
     public function forgot()
     {
         $user_login = isset($_POST['user_login']) ? sanitize_text_field($_POST['user_login']) : '';
+
+        if ( empty( $user_login ) ) {
+            $this->redirectURL = add_query_arg( 'action', 'forgot', $this->redirectURL );
+            $this->redirectURL = add_query_arg( 'message-error', 'Username%20is%20required', $this->redirectURL );
+
+            wp_redirect($this->redirectURL);
+            exit;
+        }
+
         $user_data = get_user_by('login', $user_login);
 
         if ($user_data !== false) {
