@@ -1,16 +1,15 @@
 <?php
-// phpcs:disable PSR1.Files.SideEffects
 /**
- * Plugin Name:     Member Frontend by Pivotal
- * Plugin URI:      https://github.com/pvtl/wp-member-frontend.git
- * Description:     Adds a member frontend custom post type, taxonomy and fields
- * Author:          Pivotal Agency
- * Author URI:      http://pivotal.agency
- * Text Domain:     member-frontend
- * Domain Path:     /languages
- * Version:         0.1.0
+ * Plugin Name: Member Frontend by Pivotal
+ * Plugin URI: https://github.com/pvtl/wp-member-frontend
+ * Description: Adds a member frontend custom post type, taxonomy and fields
+ * Author: Pivotal Agency
+ * Author URI: https://pivotal.agency
+ * Text Domain: member-frontend
+ * Domain Path: /languages/
+ * Version: 0.1.6
  *
- * @package         Member_Frontend
+ * @package MemberFrontend
  */
 
 namespace App\Plugins\Pvtl;
