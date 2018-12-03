@@ -1,0 +1,16 @@
+{
+  "name": "pvtl/wp-member-frontend",
+  "description": "A Wordpress Plugin for displaying Member Forms.",
+  "homepage": "https://github.com/pvtl/wp-member-frontend",
+  "license": "GPL3",
+  "authors": [
+    {
+      "name": "Pivotal Agency",
+      "homepage": "https://pivotal.agency"
+    }
+  ],
+  "type": "wordpress-plugin",
+  "require": {
+    "php": ">=5.6"
+  }
+}
