@@ -5,21 +5,13 @@
 */
 ?>
 
-<?php if (isset($_GET['message-error']) && $_GET['message-error'] == 'failed') : ?>
-    <div class="callout alert"><h5>Sorry, login failed</h5></div>
-<?php endif; ?>
+<?php if ( $this->hasFlash( 'error' ) ) { ?>
+    <div class="callout alert"><?= $this->getFlash( 'error' ); ?></div>
+<?php } ?>
 
-<?php if (isset($_GET['message-error']) && $_GET['message-error'] == 'token_expired') : ?>
-    <div class="callout alert"><h5>Password reset token has expired</h5></div>
-<?php endif; ?>
-
-<?php if (isset($_GET['message-success']) && $_GET['message-success'] == 'password_reset_sent') : ?>
-    <div class="callout alert"><h5>Check your email for the confirmation link</h5></div>
-<?php endif; ?>
-
-<?php if (isset($_GET['message-success']) && $_GET['message-success'] == 'password_reset') : ?>
-    <div class="callout alert"><h5>Your password has successfully reset</h5></div>
-<?php endif; ?>
+<?php if ( $this->hasFlash( 'success' ) ) { ?>
+    <div class="callout success"><?= $this->getFlash( 'success' ); ?></div>
+<?php } ?>
 
 <?php
     // Login form arguments.
@@ -27,7 +19,7 @@
         'echo'           => true,
         'redirect'       => get_permalink(),
         'form_id'        => 'loginform',
-        'label_username' => __( 'Username' ),
+        'label_username' => __( 'Email' ),
         'label_password' => __( 'Password' ),
         'label_remember' => __( 'Remember Me' ),
         'label_log_in'   => __( 'Log In' ),

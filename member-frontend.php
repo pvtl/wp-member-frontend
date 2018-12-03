@@ -7,389 +7,782 @@
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
  * Domain Path: /languages/
- * Version: 0.1.6
+ * Version: 0.2.0
  *
  * @package MemberFrontend
  */
 
 namespace App\Plugins\Pvtl;
 
-class MemberFrontend
-{
-    // The name of the plugin (for cosmetic purposes)
-    protected $pluginName = 'Member Frontend';
+defined( 'ABSPATH' ) || die;
 
-    // Redirect URL for forms
-    protected $redirectURL = '';
-
-    public function __construct()
-    {
-        $this->redirectURL = isset($_REQUEST['redirect_to'])
-            ? $_REQUEST['redirect_to']
-            : (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '');
-
-        // Call the actions/hooks
-        add_action('wp_login_failed', array($this, 'interceptFrontendFailedLoginURL'));
-        add_action('after_setup_theme', array($this, 'removeAdminBar'));
-        add_action('template_redirect', array($this, 'handleDataSubmission'));
-
-        // Shortcodes
-        add_shortcode('member-dashboard', array($this, 'displayMemberDashboard'));
-        add_shortcode('member-register', array($this, 'displayRegisterForm'));
-    }
+/**
+ * Main MemberFrontend Class
+ *
+ * @class MemberFrontend
+ */
+class MemberFrontend {
 
     /**
-     * Removes member top bar for front-end users
+     * MemberFrontend version.
+     *
+     * @var string
      */
-    public function removeAdminBar() {
-        if (!current_user_can('administrator') && !is_admin()) {
-            show_admin_bar(false);
+    public $version = '0.2.0';
+
+	/**
+	 * Redirect URL for forms.
+	 *
+	 * @var string
+	 */
+	protected $redirectTo = '';
+
+    /**
+     * List of custom member pages.
+     *
+     * @var array
+     */
+    protected $pages = array();
+
+    /**
+     * The dashboard page ID
+     *
+     * @var int
+     */
+	public $dashboardPage;
+    
+    /**
+     * The register page ID
+     *
+     * @var int
+     */
+    public $registerPage;
+
+	public function __construct() {
+
+	    // Start a session for flashing data
+		if ( session_status() === PHP_SESSION_NONE ) {
+			session_start();
+		}
+
+		// If redirect_to is set, update the redirect URL.
+		$this->setRedirectUrl(
+			isset( $_REQUEST['redirect_to'] )
+				? $_REQUEST['redirect_to']
+				: ( isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : '' )
+		);
+
+		// WP actions and hooks
+		$this->init();
+
+        do_action( 'mf_loaded' );
+	}
+
+	/**
+	 * Hook into WP actions and adds plugin shortcodes.
+	 */
+	protected function init() {
+
+        $this->dashboardPage = get_theme_mod( 'mf_dashboard' );
+        $this->registerPage = get_theme_mod( 'mf_register' );
+
+        // Prevent members from accessing WordPress dashboard
+        add_action( 'init', function () {
+            if ( is_admin() && current_user_can( 'subscriber' ) && ! ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) {
+                $this->doRedirect( $this->getPageURL( 'dashboard' ) );
+            }
+        } );
+
+        add_action( 'customize_register', array( $this, 'customizeRegister' ), 10, 1 );
+		add_action( 'wp_login_failed', array( $this, 'interceptFailedLogin' ) );
+		add_action( 'after_setup_theme', array( $this, 'removeAdminBar' ) );
+		add_action( 'template_redirect', array( $this, 'handleDataSubmission' ) );
+        add_action( 'wp_authenticate', array( $this, 'catchEmptyLogin' ), 1, 2 );
+
+		add_shortcode( 'member-dashboard', array( $this, 'displayMemberDashboard' ) );
+		add_shortcode( 'member-register', array( $this, 'displayRegisterForm' ) );
+	}
+
+	/**
+	 * Check the current request method.
+	 *
+	 * @param string $method
+	 *
+	 * @return bool
+	 */
+	protected function is( $method ) {
+		return $method === $this->method();
+	}
+
+	/**
+	 * Get the current request method.
+	 *
+	 * @return string
+	 */
+	protected function method() {
+		return strtolower( $_SERVER['REQUEST_METHOD'] );
+	}
+
+    /**
+     * Add MemberFrontend options to the customizer.
+     *
+     * @param \WP_Customize_Manager $wp_customize
+     */
+    public function customizeRegister( $wp_customize ) {
+
+        $wp_customize->add_section( 'mf_section' , array(
+            'title'      => __( 'Member Frontend', 'member-frontend' ),
+            'priority'   => 30,
+        ) );
+
+        $wp_customize->add_setting( 'mf_dashboard' , array(
+            'default'   => '',
+            'transport' => 'refresh'
+        ) );
+
+        $wp_customize->add_control('mf_dashboard', array(
+            'type'       => 'dropdown-pages',
+            'label'      => __( 'Dashboard Page', 'member-frontend' ),
+            'section'    => 'mf_section',
+            'settings'   => 'mf_dashboard',
+        ) );
+
+        $wp_customize->add_setting( 'mf_register' , array(
+            'default'   => '',
+            'transport' => 'refresh'
+        ) );
+
+        $wp_customize->add_control('mf_register', array(
+            'type'       => 'dropdown-pages',
+            'label'      => __( 'Register Page', 'member-frontend' ),
+            'section'    => 'mf_section',
+            'settings'   => 'mf_register',
+        ) );
+    }
+
+	/**
+	 * Renders a view.
+	 *
+	 * @param string $name path to the view
+	 * @param array  $vars optional variables to pass to scope
+	 *
+	 * @return string
+	 */
+	protected function view( $name, $vars = array() ) {
+		$includePath = "resources/views/{$name}.php";
+
+		// Check for local override
+		if ( $override = locate_template( "member-frontend/{$name}.php" ) ) {
+			$includePath = $override;
+		}
+
+		// Extract the view vars
+		extract( $vars );
+
+		ob_start();
+
+		require $includePath;
+
+		$view = ob_get_clean();
+
+		$this->forgetFlash( 'input' );
+
+		return $view;
+	}
+
+    /**
+     * Renders a view partial.
+     *
+     * @param string $name path to the partial
+     *
+     * @return string
+     */
+    protected function partial( $name ) {
+        $includePath = "resources/views/partials/{$name}.php";
+
+        // Check for local override
+        if ( $override = locate_template( "member-frontend/partials/{$name}.php" ) ) {
+            $includePath = $override;
         }
-    }
 
-    /**
-     * When the front-end login form fails, make sure it goes back to the front-end form
-     * @param  str $username - the username submitted
-     * @return redirect
-     */
-    public function interceptFrontendFailedLoginURL($username) {
-        if (
-            !empty($this->redirectURL)
-            && !strstr($this->redirectURL, 'wp-login')
-            && !strstr($this->redirectURL,'wp-admin')
-        ) {
-            wp_redirect($this->redirectURL . '/?message-error=failed');
-            exit;
-        }
-    }
-
-    /**
-     * Get the Logout URL
-     * @return str - the url
-     */
-    private function getLogoutURL() {
-        $logout_url = wp_logout_url();
-        $logout_params = array('redirect_to' => get_permalink());
-        return esc_url(add_query_arg($logout_params, $logout_url));
-    }
-
-    public function displayRegisterForm() {
-        return $this->displayMemberDashboard('register');
-    }
-
-    /**
-     * Display the login form - used by a shortcode [member-dashboard]
-     * @param string $type
-     * @return str - html form
-     */
-    public function displayMemberDashboard($type = '') {
         ob_start();
 
-        // Show update profile form
-        if (is_user_logged_in()) {
-            $this->includeTemplate('update-profile.php');
+        require $includePath;
 
-        } else {
-            // Show sign up Form
-            if ($type === 'register') {
-                $this->includeTemplate('register.php');
-            } else {
+        $view = ob_get_clean();
 
-                $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : null;
+        return $view;
+    }
 
-                if (!$action) {
-                    $this->includeTemplate('login.php');
-                } elseif ($action === 'forgot') {
-                    $this->includeTemplate('forgot.php');
-                } elseif ($action === 'reset') {
-                    $this->includeTemplate('reset.php');
-                }
+	/**
+	 * Safely perform redirect and die.
+	 *
+	 * @param string $url
+	 * @param bool   $with_input
+	 */
+	public function doRedirect( $url = '', $with_input = false ) {
+		if ( $with_input && $this->is( 'post' ) ) {
+			$this->setFlash( 'input' , $_POST );
+		}
+
+		wp_safe_redirect( $url != '' ? $url : $this->redirectTo );
+		die;
+	}
+
+	/**
+	 * Build the redirect URL.
+	 *
+	 * @param string $path         URL path
+	 * @param string $action       action to run
+	 * @param array  $addParams    parameters to add to the query string
+	 * @param array  $removeParams parameters to remove from the query string
+	 *
+	 * @return string
+	 */
+	public function setRedirectUrl( $path, $action = '', $addParams = array(), $removeParams = array() ) {
+		$url = $path;
+
+		// Add action
+		if ( trim( $action ) !== '' ) {
+			$addParams['action'] = $action;
+		}
+
+		// Add parameters to the URL
+		if ( count( $addParams ) ) {
+			$url = add_query_arg( $addParams, $url );
+		}
+
+		// Remove parameters from the URL
+		if ( count( $removeParams ) ) {
+			$url = remove_query_arg( $removeParams, $url );
+		}
+
+		$this->redirectTo = esc_url_raw( $url );
+
+		return $url;
+	}
+
+	/**
+	 * Get the current user.
+	 *
+	 * @return \WP_User
+	 */
+	public function getCurrentUser() {
+		return wp_get_current_user();
+	}
+
+	/**
+	 * Removes member top bar for front-end users.
+	 */
+	public function removeAdminBar() {
+		if ( ! current_user_can( 'administrator' ) && ! is_admin() ) {
+			show_admin_bar( false );
+		}
+	}
+
+	/**
+	 * When the front-end login form fails, make sure
+	 * it goes back to a front-end view.
+	 */
+	public function interceptFailedLogin() {
+		if ( ! empty( $this->redirectTo )
+		     && ! strstr( $this->redirectTo, 'wp-login' )
+		     && ! strstr( $this->redirectTo, 'wp-admin' ) ) {
+			$this->setFlash( 'error', 'Sorry, login failed' );
+			$this->setRedirectUrl( $this->getPageURL( 'dashboard' ) );
+			$this->doRedirect();
+		}
+	}
+
+    /**
+     * Catch empty login attempts.
+     *
+     * @param string $username
+     * @param string $password
+     */
+    public function catchEmptyLogin( $username, $password ) {
+        if ( empty( $username ) || empty( $password ) ) {
+            $this->interceptFailedLogin();
+        }
+    }
+
+	/**
+	 * Get the Logout URL.
+	 *
+	 * @return string
+	 */
+	public function getLogoutURL() {
+		$logout_url    = wp_logout_url();
+		$logout_params = array( 'redirect_to' => get_permalink() );
+
+		return esc_url( add_query_arg( $logout_params, $logout_url ) );
+	}
+
+    /**
+     * Get a page URL.
+     *
+     * @param string $name Page slug
+     *
+     * @return string
+     */
+    public function getPageURL( $name ) {
+        switch ( $name ) {
+            case 'dashboard':
+                $url = get_page_link( $this->dashboardPage );
+                break;
+            case 'register':
+                $url = get_page_link( $this->registerPage );
+                break;
+            case 'logout':
+                $url = $this->getLogoutURL();
+                break;
+            default:
+                $url = add_query_arg( 'page', $name, get_page_link( $this->dashboardPage ) );
+        }
+
+        return esc_url( $url );
+    }
+
+	/**
+	 * Display the member registration view.
+	 *
+	 * @return string
+	 */
+	public function displayRegisterForm() {
+		return $this->view( 'register' );
+	}
+
+	/**
+	 * Display the member dashboard.
+     *
+     * Handles all logged in member pages.
+	 *
+	 * @return string
+	 */
+	public function displayMemberDashboard() {
+
+		$view = '';
+
+		if ( is_user_logged_in() ) {
+
+            $this->pages = apply_filters( 'mf_setup_pages', $this->pages );
+
+		    // Get the page template name
+		    $template = isset( $_GET['page'] ) && in_array( $_GET['page'], $this->pages )
+                ? $_GET['page']
+                : 'update-profile';
+
+		    // Run custom actions on post
+		    if ( $template !== 'update-profile' && $this->is( 'post' ) ) {
+		        do_action( "mf_post_{$template}" );
+            }
+
+			$view = $this->view( $template, array(
+				'user' => $this->getCurrentUser()
+			) );
+
+		} else {
+
+            $action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : null;
+
+            if ( ! $action ) {
+                $view = $this->view( 'login' );
+            } elseif ( $action === 'forgot' ) {
+                $view = $this->view( 'forgot' );
+            } elseif ( $action === 'reset' ) {
+                $view = $this->view( 'reset' );
+            }
+
+		}
+
+		return $view;
+	}
+
+	/**
+	 * Main router for data handling (eg. update account).
+	 */
+	public function handleDataSubmission() {
+
+        if ( is_user_logged_in() && get_the_ID() == $this->registerPage ) {
+            $this->doRedirect( get_page_link( $this->dashboardPage ) );
+        }
+
+		if ( isset( $_REQUEST['action'] ) ) {
+			switch ( $_REQUEST['action'] ) {
+				case 'update-profile':
+					$this->updateProfile();
+					break;
+				case 'register':
+					$this->register();
+					break;
+				case 'forgot':
+
+					// Only run if post
+					if ( $this->is( 'post' ) ) {
+						$this->forgotPassword();
+					}
+
+					break;
+				case 'reset':
+
+					// Check password reset key is valid
+					$this->validatePasswordKey();
+
+					if ( $this->is( 'post' ) ) {
+						$this->resetPassword();
+					}
+
+					break;
+			}
+		}
+	}
+
+	/**
+	 * Sign Up for new account.
+	 */
+	public function register() {
+		if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'mf_register' ) ) {
+			wp_nonce_ays( '' );
+			die();
+		}
+
+		// Basic Fields to update
+		$user_data['first_name'] = isset( $_POST['first_name'] ) ? sanitize_text_field( $_POST['first_name'] ) : '';
+		$user_data['last_name']  = isset( $_POST['last_name'] ) ? sanitize_text_field( $_POST['last_name'] ) : '';
+
+		$user_data['user_email'] = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+		$user_data['user_pass'] = isset( $_POST['user_pass'] ) ? $_POST['user_pass'] : '';
+
+        $user_data['username'] = $user_data['user_email'];
+
+		// Filter the user data array
+		$user_data = apply_filters( 'mf_user_before_save', $user_data );
+
+		add_filter( 'mf_validate_user', array( $this, 'validateUser' ), 5, 2 );
+
+        $errors = apply_filters( 'mf_validate_user', array(), $user_data );
+
+		if ( count( $errors ) ) {
+			$this->setFlash( 'error', $errors );
+			$this->doRedirect( null, true );
+		}
+
+		// Create User
+		$user_id = wp_create_user( $user_data['username'], $user_data['user_pass'], $user_data['user_email'] );
+
+		if ( is_wp_error( $user_id ) ) {
+			$this->setRedirectUrl( $this->redirectTo, '', array( 'updated' => 'failed' ) );
+		} else {
+			$this->setFlash( 'success', 'Account successfully created' );
+			$this->setRedirectUrl( $this->redirectTo, '' );
+		}
+
+		// Update user meta
+		$user_data['ID'] = $user_id;
+		wp_update_user( $user_data );
+
+		$user = get_user_by( 'id', $user_id );
+
+        do_action( 'mf_user_update', $user, $user_data );
+        do_action( 'mf_user_register', $user, $user_data );
+
+        $auto_login = apply_filters( 'mf_auto_login', true );
+        $register_redirect = apply_filters( 'mf_register_redirect', null );
+
+        if ( $auto_login ) {
+            wp_signon( array(
+                'user_login'    => $user_data['username'],
+                'user_password' => $user_data['user_pass']
+            ) );
+        }
+
+		$this->doRedirect( $register_redirect );
+	}
+
+	/**
+	 * Update User Profile.
+	 */
+	public function updateProfile() {
+		// Current member
+		$current_user = wp_get_current_user();
+
+		if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'mf_update_' . $current_user->ID ) ) {
+			wp_nonce_ays( '' );
+			die();
+		}
+
+		$user_data = array( 'ID' => $current_user->ID );
+
+		// Basic Fields to update
+		$user_data['first_name'] = isset( $_POST['first_name'] ) ? sanitize_text_field( $_POST['first_name'] ) : '';
+		$user_data['last_name']  = isset( $_POST['last_name'] ) ? sanitize_text_field( $_POST['last_name'] ) : '';
+
+		$user_data['user_email'] = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+		$user_data['user_pass'] = isset( $_POST['user_pass'] ) ? $_POST['user_pass'] : '';
+
+        // Filter the user data array
+        $user_data = apply_filters( 'mf_user_before_save', $user_data );
+
+        add_filter( 'mf_validate_user', array( $this, 'validateUser' ), 5, 2 );
+
+        $errors = apply_filters( 'mf_validate_user', array(), $user_data );
+
+        if ( count( $errors ) ) {
+            $this->setFlash( 'error', $errors );
+            $this->doRedirect( null, true );
+        }
+
+		// Send to WP to update
+		$user_id = wp_update_user( $user_data );
+
+		if ( is_wp_error( $user_id ) ) {
+			$this->setRedirectUrl( $this->redirectTo, '', array( 'updated' => 'failed' ) );
+		} else {
+			$this->setFlash( 'success', 'Account updated successfully' );
+			$this->setRedirectUrl( $this->redirectTo, '' );
+		}
+
+        $user = get_user_by( 'id', $user_id );
+
+        do_action( 'mf_user_update', $user, $user_data );
+
+		$this->doRedirect();
+	}
+
+	/**
+	 * Send Password Reset Email.
+	 */
+	public function forgotPassword() {
+		$user_login = isset( $_POST['user_login'] ) ? sanitize_text_field( $_POST['user_login'] ) : '';
+
+		if ( empty( $user_login ) ) {
+			$this->setFlash( 'error', 'Email is required' );
+			$this->setRedirectUrl( $this->redirectTo, 'forgot' );
+			$this->doRedirect();
+		}
+
+		$user_data = get_user_by( 'email', $user_login );
+
+		if ( $user_data !== false ) {
+			$user_login = $user_data->user_login;
+			$user_email = $user_data->user_email;
+			$key        = get_password_reset_key( $user_data );
+
+			$site_name = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+
+			// Load the email view
+			$message = $this->view( 'email/forgot', array(
+				'site_name'  => $site_name,
+				'user_login' => $user_login,
+				'key'        => $key
+			) );
+
+			/* translators: Password reset email subject. %s: Site name */
+			$title = sprintf( __( '[%s] Password Reset' ), $site_name );
+			$title = apply_filters( 'retrieve_password_title', $title, $user_login, $user_data );
+
+			$message = apply_filters( 'retrieve_password_message', $message, $key, $user_login, $user_data );
+
+			wp_mail( $user_email, wp_specialchars_decode( $title ), $message );
+		}
+
+		$this->setFlash( 'success', 'Please check your email for the confirmation link' );
+		$this->setRedirectUrl( $this->redirectTo, '' );
+		$this->doRedirect();
+	}
+
+	/**
+	 * Reset Password.
+	 */
+	protected function resetPassword() {
+		$username = isset( $_POST['login'] ) ? urldecode( $_POST['login'] ) : '';
+		$user     = get_user_by( 'login', $username );
+
+		if ( $user !== false ) {
+			$newPassword      = isset( $_POST['pass1'] ) ? $_POST['pass1'] : '';
+			$newPasswordCheck = isset( $_POST['pass2'] ) ? $_POST['pass2'] : '';
+
+			$valid = $this->validatePassword( $newPassword, $newPasswordCheck );
+
+			if ( $valid === true ) {
+				reset_password( $user, $newPassword );
+			} else {
+			    $this->setFlash( 'error', $valid );
+				$this->setRedirectUrl( $this->redirectTo, 'reset', array(
+					'key'   => $_POST['key'],
+					'login' => $_POST['login']
+				) );
+				$this->doRedirect();
+			}
+
+			$this->setFlash( 'success', 'Password reset successfully' );
+			$this->setRedirectUrl( $this->redirectTo, '' );
+		} else {
+			$this->setFlash( 'error', 'User not found' );
+			$this->setRedirectUrl( $this->redirectTo, 'reset' );
+		}
+
+		$this->doRedirect();
+	}
+
+    /**
+     *
+     *
+     * @param $user_data
+     * @param array $errors
+     *
+     * @return array
+     */
+    public function validateUser( $errors, $user_data ) {
+
+        $email_error = $this->validateEmail( $user_data['user_email'] );
+        if ( $email_error !== true ) {
+            $errors['email'] = $this->validateEmail( $user_data['user_email'] );
+        }
+
+        if ( ! isset( $user_data['ID'] ) || ! empty( $user_data['user_pass'] ) ) {
+            $password_error = $this->validatePassword( $user_data['user_pass'], $_POST['pass2'] );
+            if ( $password_error !== true ) {
+                $errors['user_pass'] = $this->validatePassword( $user_data['user_pass'], $_POST['pass2'] );
             }
         }
 
-        return ob_get_clean();
+        return $errors;
     }
 
-    private function includeTemplate($template) {
-        $current_user = wp_get_current_user(); // Current member
+	/**
+	 * validate the user password reset key.
+	 */
+	protected function validatePasswordKey() {
+		$key   = isset( $_REQUEST['key'] ) ? sanitize_text_field( $_REQUEST['key'] ) : null;
+		$login = isset( $_REQUEST['login'] ) ? sanitize_text_field( $_REQUEST['login'] ) : null;
+		$user  = null;
 
-        if ($overridden_template = locate_template('member-frontend/' . $template)) {
-            require($overridden_template);
-        } else {
-            require('resources/views/' . $template);
-        }
-    }
+		if ( isset( $key, $login ) ) {
+			$user = check_password_reset_key( $key, $login );
+		}
 
-    /**
-     * Main router for data handling (eg. update account)
-     * @return redirects to respective page
-     */
-    public function handleDataSubmission() {
-        if (isset($_REQUEST['action'])) {
-            switch ($_REQUEST['action']) {
-                case 'update-profile' :
-                    return $this->updateProfile();
-                    break;
-                case 'register' :
-                    return $this->register();
-                    break;
-                case 'forgot' :
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $this->forgot();
-                    }
-                    break;
-                case 'reset' :
+		// If password reset key is invalid display an error
+		if ( is_wp_error( $user ) || $user === null ) {
+			$this->setFlash( 'error', 'Security token has expired' );
+			$this->setRedirectUrl( '', '' );
+			$this->doRedirect();
+		}
+	}
 
-                    // Check password reset key is valid
-                    $key = isset($_REQUEST['key']) ? $_REQUEST['key'] : null;
-                    $login = isset($_REQUEST['login']) ? $_REQUEST['login'] : null;
-                    $user = null;
+	/**
+	 * Validate Email Input.
+	 *
+	 * @param string $email email to validate
+	 *
+	 * @return bool
+	 */
+	public function validateEmail( $email ) {
+		$current_user = wp_get_current_user();
 
-                    if (isset($key, $login)) {
-                        $user = check_password_reset_key($key, $login);
-                    }
+		if ( empty( $email ) ) {
+			return 'Please enter a valid email address';
+		} elseif ( ! is_email( $email ) ) {
+			return 'Please enter a valid email address';
+		} elseif ( $email != $current_user->user_email && ( email_exists( $email ) || username_exists( $email ) ) ) {
+			return 'Email address already in use';
+		}
 
-                    // If password reset key is invalid display an error
-                    if ( is_wp_error( $user ) || $user === null ) {
-                        $this->redirectURL = esc_url(
-                            remove_query_arg(['action', 'key', 'login'],
-                                add_query_arg('message-error', 'token_expired')
-                            )
-                        );
+		return true;
+	}
 
-                        wp_redirect($this->redirectURL);
-                        exit;
-                    }
+	/**
+	 * Validate Password Input.
+	 *
+	 * @param string $pass1 password to validate
+	 * @param string $pass2 confirm password
+	 *
+	 * @return bool
+	 */
+	public function validatePassword( $pass1, $pass2 ) {
 
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $this->reset();
-                    }
+		if ( isset( $pass1 ) && ! empty( $pass1 ) && isset( $pass2 ) && ! empty( $pass2 ) ) {
+			// Password and Confirm Password don't match
+			if ( ! isset( $pass2 ) || ( isset( $pass2 ) && $pass2 != $pass1 ) ) {
+				return 'Passwords do not match';
+			}
 
-                    break;
-            }
-        }
-    }
+			return true;
+		}
 
-    /**
-     * Sign Up for new account
-     * @return redirects to respective page
-     */
-    public function register() {
-        // Basic Fields to update
-        $userData['first_name'] = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
-        $userData['last_name'] = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
+		if ( ! isset( $pass1 ) || empty( $pass1 ) ) {
+			return 'Please enter a password';
+		} elseif ( ! isset( $pass2 ) || empty( $pass2 ) ) {
+			return 'Please confirm your password';
+		}
 
-        // Email Validation
-        $userData['user_email'] = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
-        if (!$this->validateEmail($userData['user_email'])) return wp_redirect($this->redirectURL);
+		return 'Please enter a password';
+	}
 
-        // Username Validation
-        $userData['username'] = $userData['user_email'];
-        if (username_exists($userData['username'])) {
-            $this->redirectURL = esc_url(add_query_arg('message-error', 'username/email is already in use', $this->redirectURL));
-            return wp_redirect($this->redirectURL);
-        }
+	/**
+	 *
+	 *
+	 * @param string $name
+	 * @param mixed  $data
+	 */
+	public function setFlash( $name, $data ) {
+		$_SESSION["flash_{$name}"] = serialize( $data );
+	}
 
-        // Password Validation
-        $userData['user_pass'] = isset($_POST['pass1']) ? $_POST['pass1'] : '';
-        // Only validate when user input a password to update
-        if (!$this->validatePassword($userData['user_pass'], $_POST['pass2'])) return wp_redirect($this->redirectURL);
+	/**
+	 * @param string $name
+	 *
+	 * @return bool
+	 */
+	public function hasFlash( $name ) {
+		return isset( $_SESSION["flash_{$name}"] );
+	}
 
-        // Create User
-        $user_id = wp_create_user($userData['username'], $userData['user_pass'], $userData['user_email']);
+	/**
+	 * @param string $name
+	 *
+	 * @return mixed
+	 */
+	public function getFlash( $name ) {
+		$data = isset( $_SESSION["flash_{$name}"] ) ? $_SESSION["flash_{$name}"] : false;
 
-        // Update to DB Failed
-        if (is_wp_error($user_id)) {
-            $this->redirectURL = esc_url(add_query_arg('updated', 'failed', $this->redirectURL));
+		if ( $data ) {
+			unset( $_SESSION["flash_{$name}"] );
+			return unserialize( $data );
+		}
 
-        // Overall Success
-        } else {
-            $this->redirectURL = esc_url(add_query_arg('message-success', 'profile created', $this->redirectURL));
-        }
+		return false;
+	}
 
-        // Update user with full details (name)
-        $userData['ID'] = $user_id;
-        wp_update_user($userData);
+	/**
+	 * @param string $name
+	 */
+	public function forgetFlash( $name ) {
+		$data = isset( $_SESSION["flash_{$name}"] ) ? $_SESSION["flash_{$name}"] : false;
 
-        // Auto-login
-        wp_signon(array('user_login' => $userData['username'], 'user_password' => $userData['user_pass']), false);
+		if ( $data ) {
+			unset( $_SESSION["flash_{$name}"] );
+		}
+	}
 
-        wp_redirect($this->redirectURL);
-    }
+	/**
+	 * @param $name
+	 *
+	 * @return string
+	 */
+	public function old( $name ) {
+		$data = isset( $_SESSION['flash_input'] ) ? $_SESSION['flash_input'] : false;
 
-    /**
-     * Update User Profile
-     * @return redirects to respective page
-     */
-    public function updateProfile() {
-        // Current member
-        $current_user = wp_get_current_user();
-        $userData = array('ID' => $current_user->ID);
+		if ( $data ) {
+			$data = unserialize( $data );
 
-        // Basic Fields to update
-        $userData['first_name'] = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
-        $userData['last_name'] = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
+			if ( isset( $data[ $name ] ) ) {
+				return esc_attr( $data[ $name ] );
+			}
+		}
 
-        // Email Validation
-        $userData['user_email'] = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
-        if (!$this->validateEmail($userData['user_email'])) return wp_redirect($this->redirectURL);
-
-        // Password Validation
-        $userData['user_pass'] = isset($_POST['pass1']) ? $_POST['pass1'] : '';
-        // Only validate when user input a password to update
-        if (isset($_POST['pass1']) && !empty($_POST['pass1'])) {
-            if (!$this->validatePassword($userData['user_pass'], $_POST['pass2'])) {
-                return wp_redirect($this->redirectURL);
-            }
-        }
-
-        // Send to WP to update
-        $user_id = wp_update_user($userData);
-
-        // Update to DB Failed
-        if (is_wp_error($user_id)) {
-            $this->redirectURL = esc_url(add_query_arg('updated', 'failed', $this->redirectURL));
-
-        // Overall Success
-        } else {
-            $this->redirectURL = esc_url(add_query_arg('message-success', 'profile updated', $this->redirectURL));
-        }
-
-        wp_redirect($this->redirectURL);
-    }
-
-    /**
-     * Send Password Reset Email
-     */
-    public function forgot()
-    {
-        $user_login = isset($_POST['user_login']) ? sanitize_text_field($_POST['user_login']) : '';
-
-        if ( empty( $user_login ) ) {
-            $this->redirectURL = add_query_arg( 'action', 'forgot', $this->redirectURL );
-            $this->redirectURL = add_query_arg( 'message-error', 'Username%20is%20required', $this->redirectURL );
-
-            wp_redirect($this->redirectURL);
-            exit;
-        }
-
-        $user_data = get_user_by('login', $user_login);
-
-        if ($user_data !== false) {
-
-            $user_login = $user_data->user_login;
-            $user_email = $user_data->user_email;
-            $key = get_password_reset_key($user_data);
-
-            $site_name = wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
-
-            $message = __('Someone has requested a password reset for the following account:') . "\r\n\r\n";
-            $message .= sprintf(__('Site Name: %s'), $site_name) . "\r\n\r\n";
-            $message .= sprintf(__('Username: %s'), $user_login) . "\r\n\r\n";
-            $message .= __('If this was a mistake, just ignore this email and nothing will happen.') . "\r\n\r\n";
-            $message .= __('To reset your password, visit the following address:') . "\r\n\r\n";
-            $message .= '<' . $this->redirectURL . "?action=reset&key={$key}&login={$user_login}>\r\n";
-
-            /* translators: Password reset email subject. %s: Site name */
-            $title = sprintf(__('[%s] Password Reset'), $site_name);
-            $title = apply_filters('retrieve_password_title', $title, $user_login, $user_data);
-
-            $message = apply_filters('retrieve_password_message', $message, $key, $user_login, $user_data);
-
-            wp_mail($user_email, wp_specialchars_decode($title), $message);
-        }
-
-        $this->redirectURL = esc_url(add_query_arg('message-success', 'password_reset_sent', $this->redirectURL));
-
-        wp_redirect($this->redirectURL);
-        exit;
-    }
-
-    /**
-     * Reset Password
-     */
-    public function reset() {
-        $username = isset($_POST['login']) ? sanitize_text_field($_POST['login']) : '';
-        $user = get_user_by('login', $username);
-
-        if ($user !== false) {
-            $newPassword = isset($_POST['pass1']) ? $_POST['pass1'] : '';
-            $newPasswordCheck = isset($_POST['pass2']) ? $_POST['pass2'] : '';
-
-            if ($this->validatePassword($newPassword, $newPasswordCheck)) {
-                reset_password($user, $newPassword);
-            } else {
-
-                $this->redirectURL = esc_url_raw(add_query_arg('action', 'reset', $this->redirectURL));
-                $this->redirectURL = esc_url_raw(add_query_arg('key', $_POST['key'], $this->redirectURL));
-                $this->redirectURL = esc_url_raw(add_query_arg('login', $_POST['login'], $this->redirectURL));
-
-                wp_redirect($this->redirectURL);
-                exit;
-            }
-
-            $this->redirectURL = esc_url(add_query_arg('message-success', 'password_reset', $this->redirectURL));
-        } else {
-            $this->redirectURL = esc_url(add_query_arg('message-error', 'user_not_found', $this->redirectURL));
-        }
-
-        wp_redirect($this->redirectURL);
-        exit;
-    }
-
-    /**
-     * Validate Email Input
-     * @param str email to validate
-     * @return bool - true = successfully validated
-     */
-    public function validateEmail($email) {
-        $current_user = wp_get_current_user();
-
-        // Email can't be empty
-        if (!$email || empty($email)) {
-            $this->redirectURL = esc_url(add_query_arg('message-error', 'email cannot be empty', $this->redirectURL));
-
-        // Needs to be correct format
-        } elseif (!is_email($email)) {
-            $this->redirectURL = esc_url(add_query_arg('message-error', 'email is not a correct format', $this->redirectURL));
-
-        // Email can't be on another account
-        } elseif (($email != $current_user->user_email) && email_exists($email)) {
-            $this->redirectURL = esc_url(add_query_arg('message-error', 'another user is using this email address', $this->redirectURL));
-
-        // Successful validation
-        } else {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Validate Password Input
-     * @param str password to validate
-     * @return bool - true = successfully validated
-     */
-    public function validatePassword($pass1, $pass2) {
-        if (isset($pass1) && !empty($pass1)) {
-            // Password and Confirm Password don't match
-            if (!isset($pass2) || (isset($pass2) && $pass2 != $pass1)) {
-                $this->redirectURL = esc_url(add_query_arg('message-error', 'passwords do not match', $url));
-
-            // Successful validation
-            } else {
-                return true;
-            }
-        } else {
-            $this->redirectURL = esc_url(add_query_arg('message-error', 'password/s missing', $url));
-        }
-
-        return false;
-    }
+		return '';
+	}
 }
 
-if (!defined('ABSPATH')) {
-    exit;  // Exit if accessed directly
-}
-
-$pvtlMemberFrontend = new MemberFrontend();
+new MemberFrontend();

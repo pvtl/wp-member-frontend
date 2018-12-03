@@ -5,18 +5,22 @@
 */
 ?>
 
-<?php if (isset($_GET['message-error'])) : ?>
-    <div class="callout alert"><h5><?=ucfirst($_GET['message-error'])?></h5></div>
-<?php endif; ?>
+<?php if ( $this->hasFlash( 'error' ) ) { ?>
+    <div class="callout alert"><?= $this->getFlash( 'error' ); ?></div>
+<?php } ?>
 
-<form method="POST" action="<?=get_permalink()?>">
+<?php if ( $this->hasFlash( 'success' ) ) { ?>
+    <div class="callout success"><?= $this->getFlash( 'success' ); ?></div>
+<?php } ?>
+
+<form method="POST" action="<?= get_permalink() ?>">
     <h4>Reset Password</h4>
-    <p>Please enter your username. You will receive a link to create a new password via email.</p>
+    <p>Please enter your email address. You will receive a link to create a new password via email.</p>
 
     <fieldset>
       <div>
-        <label for="user_login">Username</label>
-        <input type="text" id="user_login" name="user_login" value="">
+        <label for="user_login">Email</label>
+        <input type="text" id="user_login" name="user_login">
       </div>
     </fieldset>
 

@@ -5,12 +5,12 @@
 */
 ?>
 
-<?php if (isset($_GET['message-error'])) : ?>
-    <div class="callout alert"><h5><?=ucfirst($_GET['message-error'])?></h5></div>
-<?php endif; ?>
-
 <form method="POST" action="<?=get_permalink()?>">
     <h4>Reset Password</h4>
+
+    <?php if ( $this->hasFlash( 'error' ) ) { ?>
+        <div class="callout alert"><?= $this->getFlash( 'error' ); ?></div>
+    <?php } ?>
 
     <fieldset>
         <div>

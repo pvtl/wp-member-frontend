@@ -1,53 +1,60 @@
-<?php
-/*
-    Register
-    - The template used to register
-*/
-?>
 
-<?php if (isset($_GET['message-success'])) : ?>
-    <div class="callout success"><h5><?=ucfirst($_GET['message-success'])?></h5></div>
-<?php endif; ?>
+<?php $errors = $this->getFlash( 'error' ); ?>
 
-<?php if (isset($_GET['message-error'])) : ?>
-    <div class="callout alert"><h5><?=ucfirst($_GET['message-error'])?></h5></div>
-<?php endif; ?>
-
-<form method="POST" action="<?=get_permalink()?>">
+<form method="POST" action="<?php echo get_permalink(); ?>">
     <h4>Register</h4>
 
+    <?php if ( $errors ) { ?>
+        <div class="alert callout">
+            <p><i class="fi-alert"></i> Please fix the errors below.</p>
+        </div>
+    <?php } ?>
+
     <fieldset>
-      <div>
-        <label for="first_name">First Name</label>
-        <input type="text" id="first_name" name="first_name" value="">
-      </div>
+        <div class="<?php echo isset( $errors['first_name'] ) ? 'has-error' : '' ?>">
+            <label for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" value="<?php echo $this->old( 'first_name' ); ?>" aria-describedby="first_name_help">
+            <?php if ( isset( $errors['first_name'] ) ) { ?>
+                <p class="help-text" id="first_name_help"><?php echo $errors['first_name']; ?></p>
+            <?php } ?>
+        </div>
 
-      <div>
-        <label for="last_name">Last Name</label>
-        <input type="text" id="last_name" name="last_name" value="">
-      </div>
+        <div class="<?php echo isset( $errors['last_name'] ) ? 'has-error' : '' ?>">
+            <label for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" value="<?php echo $this->old( 'last_name' ); ?>" aria-describedby="last_name_help">
+            <?php if ( isset( $errors['last_name'] ) ) { ?>
+                <p class="help-text" id="last_name_help"><?php echo $errors['last_name']; ?></p>
+            <?php } ?>
+        </div>
 
-      <div>
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" value="">
-      </div>
+        <div class="<?php echo isset( $errors['email'] ) ? 'has-error' : '' ?>">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="<?php echo $this->old( 'email' ); ?>" aria-describedby="email_help">
+            <?php if ( isset( $errors['email'] ) ) { ?>
+                <p class="help-text" id="email_help"><?php echo $errors['email']; ?></p>
+            <?php } ?>
+        </div>
 
-      <div>
-        <label for="pass1">Password</label>
-        <input type="password" id="pass1" name="pass1" value="" autocomplete="off">
-      </div>
+        <div class="<?php echo isset( $errors['user_pass'] ) ? 'has-error' : '' ?>">
+            <label for="user_pass">Password</label>
+            <input type="password" id="user_pass" name="user_pass" autocomplete="off" aria-describedby="user_pass_help">
+            <?php if ( isset( $errors['user_pass'] ) ) { ?>
+                <p class="help-text" id="user_pass_help"><?php echo $errors['user_pass']; ?></p>
+            <?php } ?>
+        </div>
 
-      <div>
-        <label for="pass2">Confirm Password</label>
-        <input type="password" id="pass2" name="pass2" value="" autocomplete="off">
-      </div>
+        <div>
+            <label for="pass2">Confirm Password</label>
+            <input type="password" id="pass2" name="pass2" autocomplete="off">
+        </div>
 
     </fieldset>
 
     <div>
         <input type="submit" value="Register" class="button" name="submit">
         <input type="hidden" name="action" value="register">
-        <input type="hidden" name="redirect_to" value="<?=get_permalink()?>">
+        <?php wp_nonce_field( 'mf_register' ); ?>
+        <input type="hidden" name="redirect_to" value="<?php echo get_permalink(); ?>">
     </div>
 
 </form>
