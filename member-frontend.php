@@ -473,7 +473,8 @@ class MemberFrontend {
 		if ( is_wp_error( $user_id ) ) {
 			$this->setRedirectUrl( $this->redirectTo, '', array( 'updated' => 'failed' ) );
 		} else {
-			$this->setFlash( 'success', 'Account successfully created' );
+			$success_message = apply_filters( 'mf_registered_success_message', 'Account successfully created' );
+			$this->setFlash( 'success', $success_message );
 			$this->setRedirectUrl( $this->redirectTo, '' );
 		}
 
