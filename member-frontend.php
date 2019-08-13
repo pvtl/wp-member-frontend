@@ -480,7 +480,12 @@ class MemberFrontend {
 
 		// Update user meta
 		$user_data['ID'] = $user_id;
-		wp_update_user( $user_data );
+		
+        // Update user data, minus password
+        $update_data = $user_data;
+        unset( $update_data['user_pass'] );
+        wp_update_user( $update_data );
+        unset( $update_data );
 
 		$user = get_user_by( 'id', $user_id );
 
