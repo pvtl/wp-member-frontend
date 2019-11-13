@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name: Member Frontend by Pivotal
+ * Plugin Name: Member Frontend & API by Pivotal
  * Plugin URI: https://github.com/pvtl/wp-member-frontend
- * Description: Adds a member frontend custom post type, taxonomy and fields
+ * Description: Adds a member frontend custom post type, taxonomy and fields. Also opens API endpoints for the abetterchoice mobile app.
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
- * Text Domain: member-frontend
+ * Text Domain: member-frontend-api
  * Domain Path: /languages/
- * Version: 0.2.0
+ * Version: 0.3.0
  *
  * @package MemberFrontend
  */
@@ -28,7 +28,7 @@ class MemberFrontend {
      *
      * @var string
      */
-    public $version = '0.2.0';
+    public $version = '0.3.0';
 
 	/**
 	 * Redirect URL for forms.
@@ -50,7 +50,7 @@ class MemberFrontend {
      * @var int
      */
 	public $dashboardPage;
-    
+
     /**
      * The register page ID
      *
@@ -100,7 +100,13 @@ class MemberFrontend {
         add_action( 'wp_authenticate', array( $this, 'catchEmptyLogin' ), 1, 2 );
 
 		add_shortcode( 'member-dashboard', array( $this, 'displayMemberDashboard' ) );
-		add_shortcode( 'member-register', array( $this, 'displayRegisterForm' ) );
+        add_shortcode( 'member-register', array( $this, 'displayRegisterForm' ) );
+
+        // Add API Actions
+        add_action('add_user_meta_to_rest_call', array($this, 'addUserMetaToRestCall'));
+        add_filter( 'rest_pre_insert_posttype', 'my_rest_prepare_post', 10, 3 );
+        add_action('rest_api_init', array($this, 'registerApiEndpoints'));
+        do_action('add_user_meta_to_rest_call');
 	}
 
 	/**
@@ -437,15 +443,43 @@ class MemberFrontend {
 		}
 	}
 
+
+    public function register()
+    {
+		if (! wp_verify_nonce( $_POST['_wpnonce'], 'mf_register' ) ) {
+			wp_nonce_ays( '' );
+			die();
+        }
+
+        $result = $this->saveUser();
+
+        if (is_wp_error($result)) {
+			$this->setFlash( 'error', $result->get_error_message() );
+			$this->doRedirect( null, true );
+        }
+
+        $success_message = apply_filters( 'mf_registered_success_message', 'Account successfully created' );
+        $this->setFlash( 'success', $success_message );
+        $this->setRedirectUrl( $this->redirectTo, '' );
+
+        $auto_login = apply_filters( 'mf_auto_login', true );
+        $register_redirect = apply_filters( 'mf_register_redirect', null );
+
+        if ( $auto_login ) {
+            wp_signon( array(
+                'user_login'    => $result['username'],
+                'user_password' => $result['user_pass']
+            ) );
+        }
+
+        $this->doRedirect( $register_redirect );
+    }
+
 	/**
 	 * Sign Up for new account.
 	 */
-	public function register() {
-		if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'mf_register' ) ) {
-			wp_nonce_ays( '' );
-			die();
-		}
-
+    public function saveUser()
+    {
 		// Basic Fields to update
 		$user_data['first_name'] = isset( $_POST['first_name'] ) ? sanitize_text_field( $_POST['first_name'] ) : '';
 		$user_data['last_name']  = isset( $_POST['last_name'] ) ? sanitize_text_field( $_POST['last_name'] ) : '';
@@ -463,24 +497,18 @@ class MemberFrontend {
         $errors = apply_filters( 'mf_validate_user', array(), $user_data );
 
 		if ( count( $errors ) ) {
-			$this->setFlash( 'error', $errors );
-			$this->doRedirect( null, true );
+            return new \WP_Error('invalid_data',  $errors);
 		}
 
 		// Create User
 		$user_id = wp_create_user( $user_data['username'], $user_data['user_pass'], $user_data['user_email'] );
 
 		if ( is_wp_error( $user_id ) ) {
-			$this->setRedirectUrl( $this->redirectTo, '', array( 'updated' => 'failed' ) );
-		} else {
-			$success_message = apply_filters( 'mf_registered_success_message', 'Account successfully created' );
-			$this->setFlash( 'success', $success_message );
-			$this->setRedirectUrl( $this->redirectTo, '' );
+			return $user_id;$this->setRedirectUrl( $this->redirectTo, '', array( 'updated' => 'failed' ) );
 		}
-
 		// Update user meta
 		$user_data['ID'] = $user_id;
-		
+
         // Update user data, minus password
         $update_data = $user_data;
         unset( $update_data['user_pass'] );
@@ -492,32 +520,37 @@ class MemberFrontend {
         do_action( 'mf_user_update', $user, $user_data );
         do_action( 'mf_user_register', $user, $user_data );
 
-        $auto_login = apply_filters( 'mf_auto_login', true );
-        $register_redirect = apply_filters( 'mf_register_redirect', null );
-
-        if ( $auto_login ) {
-            wp_signon( array(
-                'user_login'    => $user_data['username'],
-                'user_password' => $user_data['user_pass']
-            ) );
-        }
-
-		$this->doRedirect( $register_redirect );
+        return $user_data;
 	}
 
 	/**
 	 * Update User Profile.
 	 */
 	public function updateProfile() {
-		// Current member
-		$current_user = wp_get_current_user();
+        // Current member
+        $current_user = wp_get_current_user();
 
 		if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'mf_update_' . $current_user->ID ) ) {
 			wp_nonce_ays( '' );
 			die();
-		}
+        }
 
-		$user_data = array( 'ID' => $current_user->ID );
+        $userId = $this->saveProfileUpdates($current_user->ID);
+
+        if ( is_wp_error( $userId ) ) {
+            $this->setFlash( 'error', $userId->get_error_message() );
+            $this->doRedirect( null, true );
+		} else {
+			$this->setFlash( 'success', 'Account updated successfully' );
+			$this->setRedirectUrl( $this->redirectTo, '' );
+        }
+
+		$this->doRedirect();
+    }
+
+    public function saveProfileUpdates($userId)
+    {
+        $user_data = array( 'ID' => $userId );
 
 		// Basic Fields to update
 		$user_data['first_name'] = isset( $_POST['first_name'] ) ? sanitize_text_field( $_POST['first_name'] ) : '';
@@ -534,26 +567,17 @@ class MemberFrontend {
         $errors = apply_filters( 'mf_validate_user', array(), $user_data );
 
         if ( count( $errors ) ) {
-            $this->setFlash( 'error', $errors );
-            $this->doRedirect( null, true );
+            return new \WP_Error('invalid_data', $errors);
         }
 
 		// Send to WP to update
-		$user_id = wp_update_user( $user_data );
-
-		if ( is_wp_error( $user_id ) ) {
-			$this->setRedirectUrl( $this->redirectTo, '', array( 'updated' => 'failed' ) );
-		} else {
-			$this->setFlash( 'success', 'Account updated successfully' );
-			$this->setRedirectUrl( $this->redirectTo, '' );
-		}
-
-        $user = get_user_by( 'id', $user_id );
+        $user_id = wp_update_user( $user_data );
+        $user = get_user_by( 'id', $userId );
 
         do_action( 'mf_user_update', $user, $user_data );
 
-		$this->doRedirect();
-	}
+        return $user_id;
+    }
 
 	/**
 	 * Send Password Reset Email.
@@ -595,7 +619,7 @@ class MemberFrontend {
 		$this->setFlash( 'success', 'Please check your email for the confirmation link' );
 		$this->setRedirectUrl( $this->redirectTo, '' );
 		$this->doRedirect();
-	}
+    }
 
 	/**
 	 * Reset Password.
@@ -788,7 +812,201 @@ class MemberFrontend {
 		}
 
 		return '';
-	}
+    }
+
+
+     /***********************
+     * BEGIN API COMPONENTS *
+     ***********************/
+
+    /**
+     * Retrieve the field being requested from user meta data
+     *
+     * @param  mixed $user
+     * @param  mixed $field_name
+     * @param  mixed $request
+     *
+     * @return void
+     */
+    public function userMetaDataGet($user, $field_name, $request)
+    {
+        return get_user_meta($user[ 'id' ], $field_name, true);
+    }
+
+    /**
+     * Retrieve the field being requested from user meta data
+     *
+     * @param  mixed $user
+     * @param  mixed $field_name
+     * @param  mixed $request
+     *
+     * @return void
+     */
+    public function userMetaDataUpdate($value, $user, $field_name, $request)
+    {
+        return update_user_meta($user->id, $field_name, $value);
+    }
+
+    /**
+     * Register each field that should be included in user meta data
+     *
+     * @return void
+     */
+    public function addUserMetaToRestCall()
+    {
+        $metaFields = [
+            [
+                'name' => 'first_name',
+                'schema' => [
+                    "type" => "string",
+                ]
+            ],
+            [
+                'name' => 'last_name',
+                'schema' => [
+                    "type" => "string",
+                ]
+            ],
+            [
+                'name' => 'phone',
+                'schema' => [
+                    "type" => "integer",
+                ]
+            ],
+            [
+                'name' => 'state',
+                'schema' => [
+                    "type" => "string",
+                ]
+            ],
+            [
+                'name' => 'postcode',
+                'schema' => [
+                    "type" => "integer",
+                ]
+            ],
+            [
+                'name' => 'integer',
+                'schema' => [
+                    "type" => "string",
+                ]
+            ]
+        ];
+
+        foreach ($metaFields as $field) {
+            register_rest_field(
+                'user',
+                $field['name'],
+                [
+                    'get_callback'      => [$this, 'userMetaDataGet'],
+                    'update_callback'   => [$this, 'userMetaDataUpdate'],
+                    'schema' => $field['schema']
+                ]
+            );
+        }
+    }
+
+    public function registerApiEndpoints()
+    {
+        register_rest_route('api/v1/', '/register', [
+            'methods' => 'POST',
+            'callback' => [$this, 'registerFromApi'],
+        ]);
+
+        register_rest_route('api/v1/', '/users/me', [
+            'methods' => 'POST',
+            'callback' => [$this, 'updateFromApi'],
+        ]);
+
+        register_rest_route('api/v1/', '/users/forgot-password', [
+            'methods' => 'POST',
+            'callback' => [$this, 'forgotPasswordFromApi'],
+        ]);
+    }
+
+    public function updateFromApi()
+    {
+        $current_user = wp_get_current_user();
+
+        $result = $this->saveProfileUpdates($current_user->id);
+
+        if (is_wp_error($result)) {
+            wp_send_json(
+                [
+                    'data' => [
+                        'status' => 400,
+                        'params' => $result->get_error_message()
+                    ]
+                ], 400);
+        }
+
+        wp_send_json(['data' => ['status' => 200]], 200);
+    }
+
+    public function registerFromApi()
+    {
+        $result = $this->saveUser();
+
+        if (is_wp_error($result)) {
+            wp_send_json(
+                [
+                    'data' => [
+                        'status' => 400,
+                        'params' => $result->get_error_message()
+                    ]
+                ], 400);
+        }
+
+        wp_send_json(['data' => ['status' => 200]], 200);
+    }
+
+    public function forgotPasswordFromApi()
+    {
+		$user_login = isset( $_POST['user_login'] ) ? sanitize_text_field( $_POST['user_login'] ) : '';
+
+		if ( empty( $user_login ) ) {
+            wp_send_json(
+                [
+                    'data' => [
+                        'status' => 400,
+                        'error' => 'No account found for this e-mail address. Please check the e-mail and try again.'
+                    ]
+                ], 400);
+		}
+
+		$user_data = get_user_by( 'email', $user_login );
+
+		if ( $user_data !== false ) {
+			$user_login = $user_data->user_login;
+			$user_email = $user_data->user_email;
+			$key        = get_password_reset_key( $user_data );
+
+			$site_name = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+
+			// Load the email view
+			$message = $this->view( 'email/forgot', array(
+				'site_name'  => $site_name,
+				'user_login' => $user_login,
+				'key'        => $key
+			) );
+
+			/* translators: Password reset email subject. %s: Site name */
+			$title = sprintf( __( '[%s] Password Reset' ), $site_name );
+			$title = apply_filters( 'retrieve_password_title', $title, $user_login, $user_data );
+
+			$message = apply_filters( 'retrieve_password_message', $message, $key, $user_login, $user_data );
+
+			wp_mail( $user_email, wp_specialchars_decode( $title ), $message );
+        }
+
+        wp_send_json(
+        [
+            'data' => [
+                'status' => 200,
+                'message' => 'An e-mail has been sent to the address specified.'
+            ]
+        ], 200);
+    }
 }
 
 new MemberFrontend();
