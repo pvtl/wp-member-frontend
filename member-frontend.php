@@ -5,7 +5,7 @@
  * Description: Adds a member frontend custom post type, taxonomy and fields. Also opens API endpoints for the abetterchoice mobile app.
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
- * Text Domain: member-frontend-api
+ * Text Domain: member-frontend
  * Domain Path: /languages/
  * Version: 0.3.0
  *
