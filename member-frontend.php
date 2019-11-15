@@ -7,7 +7,7 @@
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
  * Domain Path: /languages/
- * Version: 0.3.0
+ * Version: 0.3.1
  *
  * @package MemberFrontend
  */
@@ -168,7 +168,7 @@ class MemberFrontend {
 	 *
 	 * @return string
 	 */
-	protected function view( $name, $vars = array() ) {
+	public function view( $name, $vars = array() ) {
 		$includePath = "resources/views/{$name}.php";
 
 		// Check for local override
