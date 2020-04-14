@@ -445,10 +445,10 @@ class MemberFrontend {
 			die();
         }
 
-        $result = $this->saveUser();
+        $user_data = $this->saveUser();
 
-        if (is_wp_error($result)) {
-			$this->setFlash( 'error', $result->get_error_message() );
+        if ( is_wp_error( $user_data ) ) {
+			$this->setFlash( 'error', $user_data->get_error_message() );
 			$this->doRedirect( null, true );
         }
 
@@ -456,13 +456,14 @@ class MemberFrontend {
         $this->setFlash( 'success', $success_message );
         $this->setRedirectUrl( $this->redirectTo, '' );
 
-        $auto_login = apply_filters( 'mf_auto_login', true );
-        $register_redirect = apply_filters( 'mf_register_redirect', null );
+		$user 			   = get_user_by( 'id', $user_data['ID'] );
+        $auto_login 	   = apply_filters( 'mf_auto_login', true );
+        $register_redirect = apply_filters( 'mf_register_redirect', null, $user );
 
         if ( $auto_login ) {
             wp_signon( array(
-                'user_login'    => $result['username'],
-                'user_password' => $result['user_pass']
+                'user_login'    => $user_data['username'],
+                'user_password' => $user_data['user_pass']
             ) );
         }
 
