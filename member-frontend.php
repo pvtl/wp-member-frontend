@@ -89,7 +89,9 @@ class MemberFrontend {
         // Prevent members from accessing WordPress dashboard
         add_action( 'init', function () {
             if ( is_admin() && current_user_can( 'subscriber' ) && ! ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) {
-                $this->doRedirect( $this->getPageURL( 'dashboard' ) );
+				$page_url = apply_filters( 'mf_page_url', $this->getPageURL( 'dashboard' ), 'dashboard' );
+
+				$this->doRedirect( $page_url );
             }
         } );
 
@@ -289,7 +291,11 @@ class MemberFrontend {
 		     && ! strstr( $this->redirectTo, 'wp-login' )
 		     && ! strstr( $this->redirectTo, 'wp-admin' ) ) {
 			$this->setFlash( 'error', 'Sorry, login failed' );
-			$this->setRedirectUrl( $this->getPageURL( 'dashboard' ) );
+
+			$page_url = apply_filters( 'mf_page_url', $this->getPageURL( 'dashboard' ), 'dashboard' );
+
+			$this->setRedirectUrl( $page_url );
+
 			$this->doRedirect();
 		}
 	}
