@@ -58,6 +58,8 @@ class MemberFrontend {
 	 */
 	public function __construct() {
 		// Start a session for flashing data.
+		session_set_cookie_params( 3600, '/', '', true, true );
+
 		if ( session_status() === PHP_SESSION_NONE ) {
 			session_start();
 		}
