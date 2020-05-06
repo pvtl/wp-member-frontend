@@ -1,35 +1,35 @@
 <?php
-/*
-    Reset Password
-    - The template used to reset password
-*/
+/**
+ * Reset password view.
+ *
+ * @package MemberFrontend
+ */
+
 ?>
+<form method="POST" action="<?php echo esc_url( get_permalink() ); ?>">
+	<h4>Reset Password</h4>
 
-<form method="POST" action="<?=get_permalink()?>">
-    <h4>Reset Password</h4>
+	<?php if ( $this->has_flash( 'error' ) ) { ?>
+		<div class="callout alert"><?php echo esc_html( $this->get_flash( 'error' ) ); ?></div>
+	<?php } ?>
 
-    <?php if ( $this->hasFlash( 'error' ) ) { ?>
-        <div class="callout alert"><?= $this->getFlash( 'error' ); ?></div>
-    <?php } ?>
+	<fieldset>
+		<div>
+			<label for="password">New password</label>
+			<input type="password" id="password" name="password">
+		</div>
 
-    <fieldset>
-        <div>
-            <label for="pass1">New password</label>
-            <input type="password" id="pass1" name="pass1" value="">
-        </div>
+		<div>
+			<label for="confirm_password">Confirm new password</label>
+			<input type="password" id="confirm_password" name="confirm_password">
+		</div>
+	</fieldset>
 
-        <div>
-            <label for="pass2">Confirm new password</label>
-            <input type="password" id="pass2" name="pass2" value="">
-        </div>
-    </fieldset>
-
-    <div>
-        <input type="submit" value="Reset Password" class="button" name="submit">
-        <input type="hidden" name="action" value="reset">
-        <input type="hidden" name="key" value="<?= wp_unslash( $_GET['key'] ) ?>">
-        <input type="hidden" name="login" value="<?= wp_unslash( $_GET['login'] ) ?>">
-        <input type="hidden" name="redirect_to" value="<?= get_permalink() ?>">
-    </div>
-
+	<div>
+		<input type="submit" value="Reset Password" class="button" name="submit">
+		<input type="hidden" name="action" value="reset">
+		<input type="hidden" name="key" value="<?php echo wp_unslash( $_GET['key'] ); ?>">
+		<input type="hidden" name="login" value="<?php echo wp_unslash( $_GET['login'] ); ?>">
+		<input type="hidden" name="redirect_to" value="<?php echo esc_url( get_permalink() ); ?>">
+	</div>
 </form>
