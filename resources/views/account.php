@@ -18,19 +18,52 @@
 	<?php $this->partial( 'notices' ); ?>
 
 	<fieldset>
-		<div>
-			<label for="first_name">First name</label>
-			<input type="text" id="first_name" name="first_name" value="<?php echo esc_html( $user->user_firstname ); ?>">
+		<div class="form-group">
+			<?php $error_message = $this->get_error( 'first_name' ); ?>
+			<label for="first_name">First Name</label>
+			<input
+				id="first_name"
+				name="first_name"
+				type="text"
+				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
+				value="<?php echo esc_html( $user->user_firstname ); ?>"
+				autocomplete="given-name"
+			>
+			<?php if ( $error_message ) { ?>
+				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
+			<?php } ?>
 		</div>
 
-		<div>
-			<label for="last_name">Last name</label>
-			<input type="text" id="last_name" name="last_name" value="<?php echo esc_html( $user->user_lastname ); ?>">
+		<div class="form-group">
+			<?php $error_message = $this->get_error( 'last_name' ); ?>
+			<label for="last_name">Last Name</label>
+			<input
+				id="last_name"
+				name="last_name"
+				type="text"
+				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
+				value="<?php echo esc_html( $user->user_lastname ); ?>"
+				autocomplete="family-name"
+			>
+			<?php if ( $error_message ) { ?>
+				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
+			<?php } ?>
 		</div>
 
-		<div>
+		<div class="form-group">
+			<?php $error_message = $this->get_error( 'email' ); ?>
 			<label for="email">Email</label>
-			<input type="email" id="email" name="email" value="<?php echo esc_html( $user->user_email ); ?>">
+			<input
+				id="email"
+				name="email"
+				type="email"
+				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
+				value="<?php echo esc_html( $user->user_email ); ?>"
+				autocomplete="email"
+			>
+			<?php if ( $error_message ) { ?>
+				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
+			<?php } ?>
 		</div>
 	</fieldset>
 
@@ -38,14 +71,30 @@
 	<p>If you would like to change your password, enter a new one here.</p>
 
 	<fieldset>
-		<div>
+		<div class="form-group">
+			<?php $error_message = $this->get_error( 'password' ); ?>
 			<label for="password">New password</label>
-			<input type="password" id="password" name="password" autocomplete="new-password">
+			<input
+				id="password"
+				name="password"
+				type="password"
+				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
+				autocomplete="new-password"
+			>
+			<?php if ( $error_message ) { ?>
+				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
+			<?php } ?>
 		</div>
 
-		<div>
+		<div class="form-group">
 			<label for="confirm_password">Confirm password</label>
-			<input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password">
+			<input
+				id="confirm_password"
+				name="confirm_password"
+				type="password"
+				class="form-control"
+				autocomplete="new-password"
+			>
 		</div>
 	</fieldset>
 

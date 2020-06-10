@@ -211,12 +211,15 @@ class Member_Frontend {
 					)
 				);
 
-				return $this->view( $action, $vars );
+				$view = $this->view( $action, $vars );
+
+				$this->forget_flash( 'input' );
+				$this->forget_flash( 'error' );
+
+				return $view;
 			},
 			99
 		);
-
-		$this->forget_flash( 'input' );
 	}
 
 	/**
@@ -461,7 +464,7 @@ class Member_Frontend {
 		$email = isset( $data['email'] ) ? sanitize_text_field( $data['email'] ) : null;
 
 		if ( ! $email ) {
-			$this->set_flash( 'error', 'Email is required' );
+			$this->set_flash( 'error', 'Please enter a valid email address' );
 			$this->redirect( 'forgot_password' );
 		}
 
@@ -708,5 +711,26 @@ class Member_Frontend {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Get the error message for a form field.
+	 *
+	 * @param string $name The field name.
+	 *
+	 * @return string
+	 */
+	public function get_error( $name ) {
+		if ( ! isset( $_SESSION['flash']['error'] ) ) {
+			return null;
+		}
+
+		$errors = maybe_unserialize( $_SESSION['flash']['error'] );
+
+		if ( ! is_array( $errors ) || ! isset( $errors[ $name ] ) ) {
+			return null;
+		}
+
+		return $errors[ $name ];
 	}
 }

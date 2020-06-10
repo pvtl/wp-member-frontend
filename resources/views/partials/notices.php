@@ -7,11 +7,20 @@
  * @var \App\Plugins\Pvtl\Classes\Member_Frontend $this
  */
 
-?>
-<?php if ( $this->has_flash( 'error' ) ) { ?>
-	<div class="alert alert-danger"><?php echo esc_html( $this->get_flash( 'error' ) ); ?></div>
-<?php } ?>
+if ( $this->has_flash( 'error' ) ) {
+	$error_message = $this->get_flash( 'error' );
 
-<?php if ( $this->has_flash( 'success' ) ) { ?>
+	if ( ! is_array( $error_message ) ) {
+		?>
+		<div class="alert alert-danger"><?php echo esc_html( $error_message ); ?></div>
+		<?php
+	} else {
+		$this->set_flash( 'error', $error_message );
+	}
+}
+
+if ( $this->has_flash( 'success' ) ) {
+	?>
 	<div class="alert alert-success"><?php echo esc_html( $this->get_flash( 'success' ) ); ?></div>
-<?php } ?>
+	<?php
+}
