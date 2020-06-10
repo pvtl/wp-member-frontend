@@ -3,11 +3,15 @@
  * Registration view.
  *
  * @package MemberFrontend
+ *
+ * @var \App\Plugins\Pvtl\Classes\Member_Frontend $this
  */
 
 ?>
 <form method="post">
 	<h2>Register</h2>
+
+	<?php $this->partial( 'notices' ); ?>
 
 	<fieldset>
 		<div>
