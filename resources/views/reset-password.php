@@ -3,15 +3,15 @@
  * Reset password view.
  *
  * @package MemberFrontend
+ *
+ * @var \App\Plugins\Pvtl\Classes\Member_Frontend $this
  */
 
 ?>
 <form method="post">
 	<h4>Reset Password</h4>
 
-	<?php if ( $this->has_flash( 'error' ) ) { ?>
-		<div class="alert alert-danger"><?php echo esc_html( $this->get_flash( 'error' ) ); ?></div>
-	<?php } ?>
+	<?php $this->partial( 'notices' ); ?>
 
 	<fieldset>
 		<div>
