@@ -30,4 +30,6 @@ wp_login_form(
 
 ?>
 
-<a href="<?php echo $this->url( 'forgot-password' ); ?>">Forgot your password?</a>
+<a class="btn btn-text" href="<?php echo $this->url( 'forgot_password' ); ?>">Forgot your password?</a>
+
+<a class="btn btn-primary" href="<?php echo $this->url( 'register' ); ?>">Don't have an account? Register now</a>
