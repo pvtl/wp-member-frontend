@@ -168,8 +168,10 @@ class Member_Frontend {
 			return;
 		}
 
+		// Get the current action.
 		$action = $this->actions->action();
 
+		// Throw 404 page.
 		if ( ! $action ) {
 			global $wp_query;
 			$wp_query->set_404();
@@ -178,10 +180,33 @@ class Member_Frontend {
 			return;
 		}
 
+		// Get the allowed actions for unauthorised users.
+		$allowed = apply_filters(
+			'mf_allowed_actions',
+			array(
+				'login',
+				'register',
+				'reset_password',
+			)
+		);
+
+		// Redirect to login on unauthorised access.
+		if ( ! $this->get_current_user() && ! in_array( $action, $allowed, true ) ) {
+			$this->set_flash( 'error', 'You must be logged in to access this area' );
+			$this->redirect( 'login' );
+		}
+
 		add_filter(
 			'the_content',
 			function ( $content ) use ( $action ) {
-				$vars = apply_filters( "mf_render_vars_{$action}", array( 'content' => $content ) );
+				$user = $this->get_current_user();
+				$vars = apply_filters(
+					"mf_render_vars_{$action}",
+					array(
+						'content' => $content,
+						'user'    => $user,
+					)
+				);
 
 				return $this->view( $action, $vars );
 			},
@@ -253,7 +278,11 @@ class Member_Frontend {
 	 * @return WP_User
 	 */
 	public function get_current_user() {
-		return wp_get_current_user();
+		if ( is_user_logged_in() ) {
+			return wp_get_current_user();
+		}
+
+		return null;
 	}
 
 	/**
