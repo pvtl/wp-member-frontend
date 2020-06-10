@@ -8,63 +8,48 @@
  */
 
 ?>
-<h1>Hi <?php echo esc_html( $user->user_firstname ); ?></h1>
+<h2>Hi <?php echo esc_html( $user->user_firstname ); ?></h2>
 
 <?php $this->partial( 'nav' ); ?>
 
 <form method="post">
-	<h4>Update Account</h4>
+	<h3>Update your account</h3>
 
 	<?php $this->partial( 'notices' ); ?>
 
 	<fieldset>
-		<div class="<?php echo isset( $update_errors['first_name'] ) ? 'has-error' : ''; ?>">
+		<div>
 			<label for="first_name">First name</label>
-			<input type="text" id="first_name" name="first_name" value="<?php echo $user->user_firstname; ?>" aria-describedby="first_name_help">
-			<?php if ( isset( $update_errors['first_name'] ) ) { ?>
-				<p class="help-text" id="first_name_help"><?php echo esc_html( $update_errors['first_name'] ); ?></p>
-			<?php } ?>
+			<input type="text" id="first_name" name="first_name" value="<?php echo esc_html( $user->user_firstname ); ?>">
 		</div>
 
-		<div class="<?php echo isset( $update_errors['last_name'] ) ? 'has-error' : ''; ?>">
+		<div>
 			<label for="last_name">Last name</label>
-			<input type="text" id="last_name" name="last_name" value="<?php echo $user->user_lastname; ?>" aria-describedby="last_name_help">
-			<?php if ( isset( $update_errors['last_name'] ) ) { ?>
-				<p class="help-text" id="last_name_help"><?php echo esc_html( $update_errors['last_name'] ); ?></p>
-			<?php } ?>
+			<input type="text" id="last_name" name="last_name" value="<?php echo esc_html( $user->user_lastname ); ?>">
 		</div>
 
-		<div class="<?php echo isset( $update_errors['email'] ) ? 'has-error' : ''; ?>">
+		<div>
 			<label for="email">Email</label>
-			<input type="text" id="email" name="email" value="<?php echo $user->user_email; ?>" aria-describedby="email_help">
-			<?php if ( isset( $update_errors['email'] ) ) { ?>
-				<p class="help-text" id="email_help"><?php echo esc_html( $update_errors['email'] ); ?></p>
-			<?php } ?>
+			<input type="email" id="email" name="email" value="<?php echo esc_html( $user->user_email ); ?>">
 		</div>
 	</fieldset>
 
-	<h4>Change password</h4>
-	<p>If you would like to change the password type a new one. Otherwise leave this blank.</p>
+	<h3>Change your password</h3>
+	<p>If you would like to change your password, enter a new one here.</p>
 
 	<fieldset>
-		<div class="<?php echo isset( $update_errors['user_pass'] ) ? 'has-error' : ''; ?>">
-			<label for="user_pass">New password</label>
-			<input type="password" id="user_pass" name="user_pass" autocomplete="off" aria-describedby="user_pass_help">
-			<?php if ( isset( $update_errors['user_pass'] ) ) { ?>
-				<p class="help-text" id="user_pass_help"><?php echo esc_html( $update_errors['user_pass'] ); ?></p>
-			<?php } ?>
+		<div>
+			<label for="password">New password</label>
+			<input type="password" id="password" name="password" autocomplete="new-password">
 		</div>
 
 		<div>
 			<label for="confirm_password">Confirm password</label>
-			<input type="password" id="confirm_password" name="confirm_password" autocomplete="off">
+			<input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password">
 		</div>
 	</fieldset>
 
 	<div>
-		<input type="submit" value="Update profile" class="button" name="submit">
-		<input type="hidden" name="action" value="update-profile">
-		<input type="hidden" name="redirect_to" value="<?php echo esc_url( get_permalink() ); ?>">
-		<?php wp_nonce_field( 'mf_update_' . $user->ID ); ?>
+		<button type="submit" class="btn btn-primary">Update profile</button>
 	</div>
 </form>
