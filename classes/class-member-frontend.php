@@ -9,6 +9,7 @@ namespace App\Plugins\Pvtl\Classes;
 
 use WP_Post;
 use WP_User;
+use WP_Error;
 
 defined( 'ABSPATH' ) || die;
 
@@ -348,78 +349,71 @@ class Member_Frontend {
 	 * @param array $data The post data.
 	 */
 	public function handle_register( $data ) {
-		$user_data = $this->save_user( $data );
+		$user = $this->save_user( $data );
 
-		if ( is_wp_error( $user_data ) ) {
-			$this->set_flash( 'error', $user_data->get_error_message() );
-			$this->do_redirect( null, true );
+		if ( is_wp_error( $user ) ) {
+			$this->set_flash( 'error', $user->get_error_message() );
+			$this->redirect( 'register', $data );
 		}
 
-		do_action( 'mf_user_register', $user, $user_data );
+		do_action( 'mf_after_register_user', $user );
 
-		$success_message = apply_filters( 'mf_registered_success_message', 'Account successfully created' );
-		$this->set_flash( 'success', $success_message );
-		$this->set_redirect_url( $this->redirect_to, '' );
-
-		$user              = get_user_by( 'id', $user_data['ID'] );
 		$auto_login        = apply_filters( 'mf_auto_login', true );
-		$register_redirect = apply_filters( 'mf_register_redirect', null, $user );
+		$success_message   = apply_filters( 'mf_registered_success_message', 'Account created successfully' );
+		$register_redirect = apply_filters( 'mf_register_redirect', $this->url( 'dashboard' ), $user );
 
 		if ( $auto_login ) {
-			wp_signon(
-				array(
-					'user_login'    => $user_data['username'],
-					'user_password' => $user_data['user_pass'],
-				)
-			);
+			wp_set_auth_cookie( $user->ID, true );
 		}
 
-		$this->do_redirect( $register_redirect );
+		$this->set_flash( 'success', $success_message );
+
+		// Redirect may be non member action.
+		wp_safe_redirect( $register_redirect );
+		die();
 	}
 
 	/**
 	 * Sign Up for new account.
+	 *
+	 * @param array $data The user data.
+	 *
+	 * @return WP_User|WP_Error
 	 */
 	public function save_user( $data ) {
-		// Basic Fields to update.
 		$user_data['first_name'] = isset( $data['first_name'] ) ? sanitize_text_field( wp_unslash( $data['first_name'] ) ) : '';
 		$user_data['last_name']  = isset( $data['last_name'] ) ? sanitize_text_field( wp_unslash( $data['last_name'] ) ) : '';
 		$user_data['user_email'] = isset( $data['email'] ) ? sanitize_email( wp_unslash( $data['email'] ) ) : '';
-		$user_data['user_pass']  = isset( $data['user_pass'] ) ? wp_unslash( $data['user_pass'] ) : '';
-		$user_data['username']   = $user_data['user_email'];
+		$user_data['user_pass']  = isset( $data['password'] ) ? wp_unslash( $data['password'] ) : '';
+		$user_data['user_login'] = $user_data['user_email'];
 
 		// Filter the user data array.
-		$user_data = apply_filters( 'mf_user_before_save', $user_data );
+		$user_data = apply_filters( 'mf_user_data', $user_data );
 
-		add_filter( 'mf_validate_user', array( $this, 'validate_user' ), 5, 2 );
+		// Add the main validation filter.
+		add_filter( 'mf_validate_user', array( $this, 'validate_user' ), 5, 3 );
 
-		$errors = apply_filters( 'mf_validate_user', array(), $user_data );
+		// Apply validation filters.
+		$errors = apply_filters( 'mf_validate_user', array(), $user_data, $data );
 
 		if ( count( $errors ) ) {
 			return new \WP_Error( 'invalid_data', $errors );
 		}
 
-		// Create User.
-		$user_id = wp_create_user( $user_data['username'], $user_data['user_pass'], $user_data['user_email'] );
+		// Create the user.
+		$user_id = wp_insert_user( $user_data );
 
+		// Return a WP_Error.
 		if ( is_wp_error( $user_id ) ) {
 			return $user_id;
 		}
 
-		// Update user meta.
-		$user_data['ID'] = $user_id;
-
-		// Update user data, minus password.
-		$update_data = $user_data;
-		unset( $update_data['user_pass'] );
-		wp_update_user( $update_data );
-		unset( $update_data );
-
+		// Get the WP_User.
 		$user = get_user_by( 'id', $user_id );
 
-		do_action( 'mf_user_update', $user, $user_data );
+		do_action( 'mf_after_save_user', $user );
 
-		return $user_data;
+		return $user;
 	}
 
 	/**
@@ -460,7 +454,7 @@ class Member_Frontend {
 		// Filter the user data array.
 		$user_data = apply_filters( 'mf_user_before_save', $user_data );
 
-		add_filter( 'mf_validate_user', array( $this, 'validateUser' ), 5, 2 );
+		add_filter( 'mf_validate_user', array( $this, 'validate_user' ), 5, 2 );
 
 		$errors = apply_filters( 'mf_validate_user', array(), $user_data );
 
@@ -558,25 +552,33 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Validate user data.
+	 * Validate user data using a filter.
 	 *
 	 * @param array $errors    The existing errors.
 	 * @param array $user_data The user data.
+	 * @param array $post_data The post data.
 	 *
 	 * @return array
 	 */
-	public function validate_user( $errors, $user_data ) {
-		$email_error = $this->validate_email( $user_data['user_email'] );
-
-		if ( true !== $email_error ) {
-			$errors['email'] = $this->validate_email( $user_data['user_email'] );
+	public function validate_user( $errors, $user_data, $post_data = array() ) {
+		if ( empty( $user_data['first_name'] ) ) {
+			$errors['first_name'] = 'Please enter your first name';
 		}
 
-		if ( ! isset( $user_data['ID'] ) || ! empty( $user_data['user_pass'] ) ) {
-			$password_error = $this->validate_password( $user_data['user_pass'], $_POST['confirm_password'] );
-			if ( true !== $password_error ) {
-				$errors['user_pass'] = $this->validate_password( $user_data['user_pass'], $_POST['confirm_password'] );
-			}
+		if ( empty( $user_data['last_name'] ) ) {
+			$errors['last_name'] = 'Please enter your last name';
+		}
+
+		$email_valid = $this->validate_email( $user_data['user_email'] );
+
+		if ( true !== $email_valid ) {
+			$errors['email'] = $email_valid;
+		}
+
+		$password_valid = $this->validate_password( $user_data['user_pass'], $post_data['confirm_password'] );
+
+		if ( true !== $password_valid ) {
+			$errors['password'] = $password_valid;
 		}
 
 		return $errors;
@@ -601,17 +603,26 @@ class Member_Frontend {
 	 *
 	 * @param string $email The email to validate.
 	 *
-	 * @return bool
+	 * @return bool|string
 	 */
 	public function validate_email( $email ) {
-		$current_user = wp_get_current_user();
+		$current_user = $this->get_current_user();
 
-		if ( empty( $email ) ) {
+		if ( empty( $email ) || ! is_email( $email ) ) {
 			return 'Please enter a valid email address';
-		} elseif ( ! is_email( $email ) ) {
-			return 'Please enter a valid email address';
-		} elseif ( $email !== $current_user->user_email && ( email_exists( $email ) || username_exists( $email ) ) ) {
-			return 'Email address already in use';
+		}
+
+		// Check that the email isn't currently in use.
+		$email_exists = email_exists( $email ) || username_exists( $email );
+
+		if ( $email_exists ) {
+			if ( $current_user ) {
+				if ( $email !== $current_user->user_email ) {
+					return 'Email address already in use';
+				}
+			} else {
+				return 'Email address already in use';
+			}
 		}
 
 		return true;
@@ -634,7 +645,6 @@ class Member_Frontend {
 			return 'Please confirm your password';
 		}
 
-		// Password and Confirm Password don't match.
 		if ( $confirm_password !== $password ) {
 			return 'Passwords do not match';
 		}
