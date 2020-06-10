@@ -7,6 +7,8 @@
  * @var \App\Plugins\Pvtl\Classes\Member_Frontend $this
  */
 
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- The URLs have already been escaped.
+
 ?>
 <nav class="member-nav">
 	<ul>

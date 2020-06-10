@@ -328,7 +328,7 @@ class Member_Frontend {
 	 */
 	public function get_logout_url() {
 		$logout_url    = wp_logout_url();
-		$logout_params = array( 'redirect_to' => get_permalink() );
+		$logout_params = array( 'redirect_to' => $this->url() );
 
 		return esc_url( add_query_arg( $logout_params, $logout_url ) );
 	}

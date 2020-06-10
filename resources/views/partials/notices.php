@@ -10,11 +10,17 @@
 if ( $this->has_flash( 'error' ) ) {
 	$error_message = $this->get_flash( 'error' );
 
+	// Check if the error message is an array of form input
+	// errors. If so, these will be displayed individually with
+	// the form field.
 	if ( ! is_array( $error_message ) ) {
 		?>
-		<div class="alert alert-danger"><?php echo esc_html( $error_message ); ?></div>
+		<div class="alert alert-danger">
+			<?php echo esc_html( $error_message ); ?>
+		</div>
 		<?php
 	} else {
+		// Add the error messages back into flash for later use.
 		$this->set_flash( 'error', $error_message );
 	}
 }
