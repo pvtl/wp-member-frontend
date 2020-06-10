@@ -34,7 +34,7 @@ class Actions {
 	protected function default_actions() {
 		return array(
 			'login',
-			'update',
+			'account',
 			'register',
 			'dashboard',
 			'reset_password',

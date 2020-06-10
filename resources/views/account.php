@@ -3,33 +3,19 @@
  * Update profile view.
  *
  * @package MemberFrontend
+ *
+ * @var \App\Plugins\Pvtl\Classes\Member_Frontend $this
  */
 
 ?>
 <h1>Hi <?php echo esc_html( $user->user_firstname ); ?></h1>
 
-<?php
+<?php $this->partial( 'nav' ); ?>
 
-echo $this->partial( 'nav' );
-
-$update_errors = $this->get_flash( 'error' );
-
-if ( $this->has_flash( 'success' ) ) {
-	?>
-	<div class="callout success"><?php echo esc_html( $this->get_flash( 'success' ) ); ?></div>
-	<?php
-}
-
-?>
-
-<form method="POST" action="<?php echo esc_url( get_permalink() ); ?>">
+<form method="post">
 	<h4>Update Account</h4>
 
-	<?php if ( is_array( $update_errors ) ) { ?>
-		<div class="callout alert">
-			<p>Please fix the errors below.</p>
-		</div>
-	<?php } ?>
+	<?php $this->partial( 'notices' ); ?>
 
 	<fieldset>
 		<div class="<?php echo isset( $update_errors['first_name'] ) ? 'has-error' : ''; ?>">
