@@ -44,3 +44,5 @@
 		<button type="submit" class="btn">Submit</button>
 	</div>
 </form>
+
+<a class="btn btn-primary" href="<?php echo $this->url( 'login' ); ?>">Already have an account? Login</a>

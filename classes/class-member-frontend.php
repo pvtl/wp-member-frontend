@@ -76,9 +76,10 @@ class Member_Frontend {
 		add_action( 'template_redirect', array( $this, 'render' ) );
 
 		// Default handlers.
+		add_action( 'mf_action_account', array( $this, 'handle_account' ), 10, 1 );
 		add_action( 'mf_action_register', array( $this, 'handle_register' ), 10, 1 );
-		add_action( 'mf_action_forgot_password', array( $this, 'handle_forgot_password' ), 10, 1 );
 		add_action( 'mf_action_reset_password', array( $this, 'handle_reset_password' ), 10, 1 );
+		add_action( 'mf_action_forgot_password', array( $this, 'handle_forgot_password' ), 10, 1 );
 	}
 
 	/**
@@ -188,6 +189,7 @@ class Member_Frontend {
 				'login',
 				'register',
 				'reset_password',
+				'forgot_password',
 			)
 		);
 
@@ -381,6 +383,10 @@ class Member_Frontend {
 	 * @return WP_User|WP_Error
 	 */
 	public function save_user( $data ) {
+		if ( isset( $data['ID'] ) && (int) $data['ID'] ) {
+			$user_data['ID'] = (int) $data['ID'];
+		}
+
 		$user_data['first_name'] = isset( $data['first_name'] ) ? sanitize_text_field( wp_unslash( $data['first_name'] ) ) : '';
 		$user_data['last_name']  = isset( $data['last_name'] ) ? sanitize_text_field( wp_unslash( $data['last_name'] ) ) : '';
 		$user_data['user_email'] = isset( $data['email'] ) ? sanitize_email( wp_unslash( $data['email'] ) ) : '';
@@ -401,7 +407,11 @@ class Member_Frontend {
 		}
 
 		// Create the user.
-		$user_id = wp_insert_user( $user_data );
+		if ( isset( $user_data['ID'] ) ) {
+			$user_id = wp_update_user( $user_data );
+		} else {
+			$user_id = wp_insert_user( $user_data );
+		}
 
 		// Return a WP_Error.
 		if ( is_wp_error( $user_id ) ) {
@@ -417,58 +427,29 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Update User Profile.
+	 * Handle Update Account action.
+	 *
+	 * @param array $data The post data.
 	 */
-	public function update_profile() {
-		// Current member.
-		$current_user = wp_get_current_user();
+	public function handle_account( $data ) {
+		$current_user = $this->get_current_user();
 
-		if ( ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'mf_update_' . $current_user->ID ) ) {
-			wp_nonce_ays( '' );
-			die();
+		if ( ! $current_user ) {
+			$this->set_flash( 'error', 'An error occurred' );
+			$this->redirect( 'login' );
 		}
 
-		$user_id = $this->save_profile_updates( $current_user->ID );
+		$data['ID'] = $current_user->ID;
 
-		if ( is_wp_error( $user_id ) ) {
-			$this->set_flash( 'error', $user_id->get_error_message() );
-			$this->do_redirect( null, true );
-		} else {
-			$this->set_flash( 'success', 'Account updated successfully' );
-			$this->set_redirect_url( $this->redirect_to, '' );
+		$user = $this->save_user( $data );
+
+		if ( is_wp_error( $user ) ) {
+			$this->set_flash( 'error', $user->get_error_message() );
+			$this->redirect( 'account', $data );
 		}
 
-		$this->do_redirect();
-	}
-
-	public function save_profile_updates( $user_id ) {
-		$user_data = array( 'ID' => $user_id );
-
-		// Basic Fields to update.
-		$user_data['first_name'] = isset( $_POST['first_name'] ) ? sanitize_text_field( $_POST['first_name'] ) : '';
-		$user_data['last_name']  = isset( $_POST['last_name'] ) ? sanitize_text_field( $_POST['last_name'] ) : '';
-
-		$user_data['user_email'] = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
-		$user_data['user_pass']  = isset( $_POST['user_pass'] ) ? $_POST['user_pass'] : '';
-
-		// Filter the user data array.
-		$user_data = apply_filters( 'mf_user_before_save', $user_data );
-
-		add_filter( 'mf_validate_user', array( $this, 'validate_user' ), 5, 2 );
-
-		$errors = apply_filters( 'mf_validate_user', array(), $user_data );
-
-		if ( count( $errors ) ) {
-			return new \WP_Error( 'invalid_data', $errors );
-		}
-
-		// Send to WP to update.
-		$user_id = wp_update_user( $user_data );
-		$user    = get_user_by( 'id', $user_id );
-
-		do_action( 'mf_user_update', $user, $user_data );
-
-		return $user_id;
+		$this->set_flash( 'success', 'Account updated successfully' );
+		$this->redirect( 'account' );
 	}
 
 	/**
@@ -575,10 +556,13 @@ class Member_Frontend {
 			$errors['email'] = $email_valid;
 		}
 
-		$password_valid = $this->validate_password( $user_data['user_pass'], $post_data['confirm_password'] );
+		// Don't validate non-existent passwords for profile updates.
+		if ( ! isset( $user_data['ID'] ) || ! empty( $user_data['user_pass'] ) ) {
+			$password_valid = $this->validate_password( $user_data['user_pass'], $post_data['confirm_password'] );
 
-		if ( true !== $password_valid ) {
-			$errors['password'] = $password_valid;
+			if ( true !== $password_valid ) {
+				$errors['password'] = $password_valid;
+			}
 		}
 
 		return $errors;
