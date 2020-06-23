@@ -73,7 +73,9 @@ class Member_Frontend {
 		// Set up the members page.
 		add_action( 'init', array( $this, 'setup_members_page' ) );
 		add_action( 'init', array( $this, 'rewrites' ) );
-		add_action( 'template_redirect', array( $this, 'render' ) );
+		add_action( 'template_redirect', array( $this, 'render' ), 10 );
+		add_action( 'mf_before_render', array( $this, 'before_render' ), 10, 1 );
+		add_filter( 'mf_render_vars', array( $this, 'render_vars' ), 10, 2 );
 
 		// Default handlers.
 		add_action( 'mf_action_account', array( $this, 'handle_account' ), 10, 1 );
@@ -163,16 +165,40 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Render the member frontend.
+	 * Filter the render vars.
+	 *
+	 * @param array  $vars   The vars to be passed to the view.
+	 * @param string $action The action that will be rendered.
+	 *
+	 * @return array
 	 */
-	public function render() {
-		if ( is_admin() || ! is_page( $this->member_page ) ) {
-			return;
+	public function render_vars( $vars, $action ) {
+		// Set the password reset key and login parameters.
+		if ( 'reset_password' === $action ) {
+			// Set the vars from query parameters.
+			$key   = isset( $_GET['key'] ) ? wp_unslash( $_GET['key'] ) : null; // phpcs:ignore
+			$login = isset( $_GET['login'] ) ? wp_unslash( $_GET['login'] ) : null; // phpcs:ignore
+
+			// If the query parameters aren't set, attempt to get
+			// them from the session data.
+			if ( ! $key && ! $login ) {
+				$key   = $this->old( 'key' );
+				$login = $this->old( 'login' );
+			}
+
+			$vars['key']   = $key;
+			$vars['login'] = $login;
 		}
 
-		// Get the current action.
-		$action = $this->actions->action();
+		return $vars;
+	}
 
+	/**
+	 * Runs before the page is rendered.
+	 *
+	 * @param string $action The action that will be rendered.
+	 */
+	public function before_render( $action ) {
 		// Throw 404 page.
 		if ( ! $action ) {
 			global $wp_query;
@@ -193,22 +219,63 @@ class Member_Frontend {
 			)
 		);
 
-		// Redirect to login on unauthorised access.
+		// Redirect to login if not logged in.
 		if ( ! $this->get_current_user() && ! in_array( $action, $allowed, true ) ) {
 			$this->set_flash( 'error', 'You must be logged in to access this area' );
 			$this->redirect( 'login' );
 		}
 
+		// Redirect to dashboard if already logged in.
+		if ( $this->get_current_user() && in_array( $action, $allowed, true ) ) {
+			$this->redirect( 'dashboard' );
+		}
+
+		// Verify the password reset key.
+		if ( 'reset_password' === $action ) {
+			// Set the vars from query parameters.
+			$key   = isset( $_GET['key'] ) ? wp_unslash( $_GET['key'] ) : null; // phpcs:ignore
+			$login = isset( $_GET['login'] ) ? wp_unslash( $_GET['login'] ) : null; // phpcs:ignore
+
+			// If the query parameters aren't set, attempt to get
+			// them from the session data.
+			if ( ! $key && ! $login ) {
+				$key   = $this->old( 'key' );
+				$login = $this->old( 'login' );
+			}
+
+			if ( ! $this->validate_password_key( $key, $login ) ) {
+				$this->set_flash( 'error', 'The password rest link has expired' );
+				$this->redirect( 'login' );
+			}
+		}
+	}
+
+	/**
+	 * Render the member frontend.
+	 */
+	public function render() {
+		if ( is_admin() || ! is_page( $this->member_page ) ) {
+			return;
+		}
+
+		// Get the current action.
+		$action = $this->actions->action();
+
+		// Perform pre-render checks and tasks.
+		do_action( 'mf_before_render', $action );
+
+		// Replace the page content with the view.
 		add_filter(
 			'the_content',
 			function ( $content ) use ( $action ) {
 				$user = $this->get_current_user();
 				$vars = apply_filters(
-					"mf_render_vars_{$action}",
+					'mf_render_vars',
 					array(
 						'content' => $content,
 						'user'    => $user,
-					)
+					),
+					$action
 				);
 
 				$view = $this->view( $action, $vars );
@@ -501,7 +568,7 @@ class Member_Frontend {
 		}
 
 		$this->set_flash( 'success', 'Please check your email for the confirmation link' );
-		$this->redirect( 'login' );
+		$this->redirect( 'forgot_password' );
 	}
 
 	/**
