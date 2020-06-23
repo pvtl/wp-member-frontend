@@ -13,6 +13,8 @@
 <?php $this->partial( 'nav' ); ?>
 
 <form method="post">
+	<?php wp_nonce_field( "mf_form_priv_{$user->ID}", 'mf_nonce' ); ?>
+
 	<h3>Update your account</h3>
 
 	<?php $this->partial( 'notices' ); ?>

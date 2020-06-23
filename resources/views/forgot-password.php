@@ -9,7 +9,9 @@
 
 ?>
 <form method="post">
-	<h4>Reset Password</h4>
+	<?php wp_nonce_field( 'mf_form_nopriv', 'mf_nonce' ); ?>
+
+	<h2>Reset your password</h2>
 	<p>Please enter your email address. You will receive a link to create a new password via email.</p>
 
 	<?php $this->partial( 'notices' ); ?>
@@ -24,6 +26,6 @@
 	<div>
 		<button type="submit" class="btn btn-primary">Send Password Reset Email</button>
 
-		<a href="<?php echo $this->url( 'login' ); ?>">Login</a>
+		<a class="btn btn-link" href="<?php echo $this->url( 'login' ); // phpcs:ignore ?>">Login</a>
 	</div>
 </form>

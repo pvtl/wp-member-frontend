@@ -9,7 +9,9 @@
 
 ?>
 <form method="post">
-	<h2>Register</h2>
+	<?php wp_nonce_field( 'mf_form_nopriv', 'mf_nonce' ); ?>
+
+	<h2>Register for an account</h2>
 
 	<?php $this->partial( 'notices' ); ?>
 

@@ -116,6 +116,17 @@ class Actions {
 		}
 
 		$data = wp_unslash( $_POST );
+		$user = wp_get_current_user();
+
+		if (
+			! isset( $data['mf_nonce'] )
+			|| (
+				! wp_verify_nonce( $data['mf_nonce'], 'mf_form_nopriv' )
+				&& ! wp_verify_nonce( $data['mf_nonce'], "mf_form_priv_{$user->ID}" )
+			)
+		) {
+			wp_die( 'Nonce verification failed' );
+		}
 
 		do_action( "mf_action_{$action}", $data );
 	}

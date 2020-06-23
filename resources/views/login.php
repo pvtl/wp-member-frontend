@@ -9,6 +9,10 @@
 
 $this->partial( 'notices' );
 
+?>
+<h2>Login</h2>
+<?php
+
 wp_login_form(
 	array(
 		'echo'           => true,
