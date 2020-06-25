@@ -34,12 +34,20 @@ class Member_Frontend {
 	protected $actions;
 
 	/**
+	 * The role manager.
+	 *
+	 * @var Role_Manager
+	 */
+	protected $role_manager;
+
+	/**
 	 * MemberFrontend constructor.
 	 */
 	public function __construct() {
 		static::start_session();
 
-		$this->actions = new Actions();
+		$this->actions      = new Actions();
+		$this->role_manager = new Role_Manager();
 
 		$this->init();
 
@@ -141,13 +149,11 @@ class Member_Frontend {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$_post = $wpdb->get_row(
 				$wpdb->prepare(
-					"
-						SELECT * FROM {$wpdb->posts}
-						INNER JOIN {$wpdb->postmeta} ON {$wpdb->postmeta}.`post_id` = {$wpdb->posts}.`ID`
-						WHERE {$wpdb->postmeta}.`meta_key` = '_wp_page_template'
-						AND {$wpdb->postmeta}.`meta_value` = %s
-						LIMIT 1
-					",
+					"SELECT * FROM {$wpdb->posts}
+					INNER JOIN {$wpdb->postmeta} ON {$wpdb->postmeta}.`post_id` = {$wpdb->posts}.`ID`
+					WHERE {$wpdb->postmeta}.`meta_key` = '_wp_page_template'
+					AND {$wpdb->postmeta}.`meta_value` = %s
+					LIMIT 1",
 					'resources/templates/members.php'
 				)
 			);
@@ -377,13 +383,16 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Catch empty login attempts.
+	 * Catch empty login attempts from member login.
 	 *
 	 * @param string $username The username.
 	 * @param string $password The password.
 	 */
 	public function catch_empty_login( $username, $password ) {
-		if ( empty( $username ) || empty( $password ) ) {
+		$is_empty    = empty( $username ) || empty( $password );
+		$is_wp_login = isset( $_SERVER['HTTP_REFERER'] ) ? wp_login_url() === $_SERVER['HTTP_REFERER'] : false;
+
+		if ( $is_empty && ! $is_wp_login && $this->actions->is( 'post' ) ) {
 			$this->intercept_failed_login();
 		}
 	}

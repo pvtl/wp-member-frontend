@@ -49,7 +49,7 @@ class Actions {
 	 *
 	 * @return bool
 	 */
-	protected function is( $method ) {
+	public function is( $method ) {
 		return trim( strtolower( $method ) ) === $this->method();
 	}
 
@@ -58,7 +58,7 @@ class Actions {
 	 *
 	 * @return string
 	 */
-	protected function method() {
+	public function method() {
 		return isset( $_SERVER['REQUEST_METHOD'] )
 			? strtolower( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) )
 			: null;
