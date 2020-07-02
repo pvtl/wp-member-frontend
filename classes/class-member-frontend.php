@@ -27,6 +27,13 @@ class Member_Frontend {
 	protected $member_page;
 
 	/**
+	 * The admin manager.
+	 *
+	 * @var Admin
+	 */
+	protected $admin;
+
+	/**
 	 * The actions handler.
 	 *
 	 * @var Actions
@@ -46,6 +53,7 @@ class Member_Frontend {
 	public function __construct() {
 		static::start_session();
 
+		$this->admin        = new Admin();
 		$this->actions      = new Actions();
 		$this->role_manager = new Role_Manager();
 
