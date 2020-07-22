@@ -31,7 +31,7 @@ class Member_Frontend {
 	 *
 	 * @var WP_Post
 	 */
-	protected $member_page;
+	public $member_page;
 
 	/**
 	 * The admin manager.
@@ -52,7 +52,7 @@ class Member_Frontend {
 	 *
 	 * @var Role_Manager
 	 */
-	protected $role_manager;
+	public $role_manager;
 
 	/**
 	 * MemberFrontend constructor.
@@ -102,9 +102,6 @@ class Member_Frontend {
 
 		// Remove the admin bar for members.
 		add_action( 'after_setup_theme', array( $this, 'remove_admin_bar' ) );
-
-		// Add the member template to the list of WordPress theme templates.
-		add_filter( 'theme_templates', array( $this, 'register_templates' ) );
 
 		// Set up the members page.
 		add_action( 'init', array( $this, 'setup_members_page' ) );
@@ -172,25 +169,11 @@ class Member_Frontend {
 		$_post = wp_cache_get( 'mf_members_page', 'posts' );
 
 		if ( ! $_post ) {
-			global $wpdb;
-
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$_post = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->posts}
-					INNER JOIN {$wpdb->postmeta} ON {$wpdb->postmeta}.`post_id` = {$wpdb->posts}.`ID`
-					WHERE {$wpdb->postmeta}.`meta_key` = '_wp_page_template'
-					AND {$wpdb->postmeta}.`meta_value` = %s
-					LIMIT 1",
-					'resources/templates/members.php'
-				)
-			);
+			$_post = (int) get_option( 'mf_page_for_members' );
 
 			if ( ! $_post ) {
 				return;
 			}
-
-			$_post = sanitize_post( $_post, 'raw' );
 
 			wp_cache_add( 'mf_members_page', $_post, 'posts' );
 		}
@@ -324,17 +307,6 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Add the member page template.
-	 *
-	 * @param array $post_templates The current theme page templates.
-	 *
-	 * @return array
-	 */
-	public function register_templates( $post_templates ) {
-		return array_merge( $post_templates, array( 'resources/templates/members.php' => 'Members Template' ) );
-	}
-
-	/**
 	 * Renders a view.
 	 *
 	 * @param string $name Path to the view.
@@ -443,7 +415,7 @@ class Member_Frontend {
 	 * @param string $action     The action to redirect to.
 	 * @param array  $with_input Redirect with stored input.
 	 */
-	protected function redirect( $action = null, $with_input = array() ) {
+	public function redirect( $action = null, $with_input = array() ) {
 		if ( ! empty( $with_input ) ) {
 			$this->set_flash( 'input', $with_input );
 		}
@@ -465,7 +437,7 @@ class Member_Frontend {
 			$this->redirect( 'register', $data );
 		}
 
-		do_action( 'mf_after_register_user', $user );
+		do_action( 'mf_after_register_user', $user, $data );
 
 		$auto_login        = apply_filters( 'mf_auto_login', true );
 		$success_message   = apply_filters( 'mf_registered_success_message', 'Account created successfully' );
@@ -501,7 +473,7 @@ class Member_Frontend {
 		$user_data['user_login'] = $user_data['user_email'];
 
 		// Filter the user data array.
-		$user_data = apply_filters( 'mf_user_data', $user_data );
+		$user_data = apply_filters( 'mf_user_data', $user_data, $data );
 
 		// Add the main validation filter.
 		add_filter( 'mf_validate_user', array( $this, 'validate_user' ), 5, 3 );
@@ -528,7 +500,7 @@ class Member_Frontend {
 		// Get the WP_User.
 		$user = get_user_by( 'id', $user_id );
 
-		do_action( 'mf_after_save_user', $user );
+		do_action( 'mf_after_save_user', $user, $user_data );
 
 		return $user;
 	}
