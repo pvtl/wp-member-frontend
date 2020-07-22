@@ -22,4 +22,13 @@ define( 'MF_PATH', __DIR__ );
 // Autoload plugin classes.
 require_once MF_PATH . '/autoload.php';
 
-new Classes\Member_Frontend();
+/**
+ * Returns the main instance of MF.
+ *
+ * @return Classes\Member_Frontend
+ */
+function MF() {
+	return Classes\Member_Frontend::instance();
+}
+
+$_GLOBALS['MF'] = MF();

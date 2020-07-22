@@ -20,6 +20,13 @@ defined( 'ABSPATH' ) || die;
  */
 class Member_Frontend {
 	/**
+	 * The single instance of the class.
+	 *
+	 * @var Member_Frontend
+	 */
+	protected static $instance;
+
+	/**
 	 * The page for the members template.
 	 *
 	 * @var WP_Post
@@ -63,13 +70,26 @@ class Member_Frontend {
 	}
 
 	/**
+	 * Main WooCommerce Instance.
+	 *
+	 * Ensures only one instance of WooCommerce is loaded or can be loaded.
+	 *
+	 * @return Member_Frontend
+	 */
+	public static function instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	/**
 	 * Start secure session for flashing data.
 	 */
 	protected static function start_session() {
-		if ( PHP_SESSION_NONE === session_status() && ! is_admin() ) {
-			session_set_cookie_params( 3600, '/', '', true, true );
-			session_start();
-		}
+		session_set_cookie_params( 3600, '/', '', true, true );
+		session_start();
 	}
 
 	/**
