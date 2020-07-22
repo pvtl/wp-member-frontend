@@ -20,15 +20,13 @@ class Role_Manager {
 	 *
 	 * @var array
 	 */
-	protected $roles = array();
+	public $roles = array();
 
 	/**
 	 * Roles constructor.
 	 */
 	public function __construct() {
-		$this->roles = apply_filters( 'mf_roles', $this->default_roles() );
-
-		$this->setup_roles();
+		add_action( 'init', array( $this, 'setup_roles' ), 30, 0 );
 	}
 
 	/**
@@ -49,7 +47,9 @@ class Role_Manager {
 	/**
 	 * Create the custom member roles.
 	 */
-	protected function setup_roles() {
+	public function setup_roles() {
+		$this->roles = apply_filters( 'mf_roles', $this->default_roles() );
+
 		if ( empty( $this->roles ) ) {
 			return;
 		}
