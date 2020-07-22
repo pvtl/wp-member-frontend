@@ -146,7 +146,7 @@ class Member_Frontend {
 	 *
 	 * @return string
 	 */
-	protected function url( $action = null, $params = array() ) {
+	public function url( $action = null, $params = array() ) {
 		$url = get_permalink( $this->member_page );
 
 		if ( $action ) {
