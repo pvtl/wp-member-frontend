@@ -9,6 +9,9 @@
 
 namespace App\Plugins\Pvtl\Classes;
 
+use \WP_User_Query;
+use function \App\Plugins\Pvtl\MF;
+
 defined( 'ABSPATH' ) || die;
 
 /**
@@ -21,11 +24,41 @@ class Admin {
 	 * Admin constructor.
 	 */
 	public function __construct() {
+		add_action( 'admin_menu', array( $this, 'setup_settings_page' ) );
+
 		// Add the filter form fields.
-		add_action( 'restrict_manage_users', array( $this, 'add_member_filters' ), 20 );
+		add_action( 'manage_users_extra_tablenav', array( $this, 'add_member_filters' ) );
 
 		// Apply the member filters.
 		add_filter( 'pre_get_users', array( $this, 'filter_members' ) );
+	}
+
+	/**
+	 * Setup the admin settings page.
+	 */
+	public function setup_settings_page() {
+		add_submenu_page(
+			'options-general.php',
+			'Members',
+			'Members',
+			'edit_posts',
+			'mf_settings',
+			array( $this, 'do_settings_page' )
+		);
+	}
+
+	/**
+	 * Callback for the settings page.
+	 */
+	public function do_settings_page() {
+		$user = MF()->get_current_user();
+		$vars = array(
+			'user' => $user,
+		);
+
+		$view = MF()->view( 'admin/settings', $vars );
+
+		echo $view;
 	}
 
 	/**
@@ -39,6 +72,8 @@ class Admin {
 		if ( empty( $member_filters ) ) {
 			return;
 		}
+
+		echo '<div class="alignleft actions">';
 
 		$text_template   = '<input type="text" name="mf_filter_%s" placeholder="%s" value="%s">';
 		$select_template = '<select name="mf_filter_%s"><option value="">%s</option>%s</select>';
@@ -73,23 +108,48 @@ class Admin {
 			}
 		}
 
-		submit_button( 'Filter', '', "mf_filter_{$which}", false );
+		submit_button( 'Filter', 'primary', "mf_filter_{$which}", false );
+
+		echo '</div>';
 	}
 
 	/**
-	 * @param $query
+	 * Filter the members table.
+	 *
+	 * @param WP_User_Query $query The query.
 	 */
-	function filter_members( $query ) {
+	public function filter_members( $query ) {
 		global $pagenow;
-		if ( is_admin() && 'users.php' == $pagenow ) {
-			$button = key( array_filter( $_GET, function ( $v ) {
-				return __( 'Filter' ) === $v;
-			} ) );
-			if ( $section = $_GET[ 'course_section_' . $button ] ) {
-				$meta_query = [ [ 'key' => 'courses', 'value' => $section, 'compare' => 'LIKE' ] ];
-				$query->set( 'meta_key', 'courses' );
-				$query->set( 'meta_query', $meta_query );
-			}
+
+		$member_filters = apply_filters( 'mf_member_filters', array() );
+
+		if ( ! is_admin() || 'users.php' !== $pagenow || empty( $member_filters ) ) {
+			return;
 		}
+
+		$filter_values = array_filter(
+			$_GET,
+			function ( $k ) {
+				return strpos( $k, 'mf_' ) === 0;
+			},
+			ARRAY_FILTER_USE_KEY
+		);
+
+		$meta_query = $query->meta_query;
+
+		foreach ( $filter_values as $filter => $value ) {
+			$filter_name = str_replace( 'mf_filter_', '', $filter );
+
+			if ( ! isset( $member_filters[ $filter_name ] ) ) {
+				continue;
+			}
+
+			$meta_query[] = array(
+				'key'   => $filter_name,
+				'value' => $value,
+			);
+		}
+
+		$query->set( 'meta_query', $meta_query );
 	}
 }
