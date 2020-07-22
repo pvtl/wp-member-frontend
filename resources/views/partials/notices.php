@@ -22,6 +22,10 @@ if ( $this->has_flash( 'error' ) ) {
 	} else {
 		// Add the error messages back into flash for later use.
 		$this->set_flash( 'error', $error_message );
+
+		?>
+		<div class="alert alert-danger">Validation errors occurred</div>
+		<?php
 	}
 }
 
