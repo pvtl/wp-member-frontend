@@ -91,6 +91,10 @@ class Actions {
 	 * @return string
 	 */
 	public function action() {
+		if ( (int) get_option( 'mf_page_for_members' ) !== get_the_ID() ) {
+			return null;
+		}
+
 		$action = str_replace( '-', '_', get_query_var( 'mf_action' ) );
 		$action = apply_filters( 'mf_fallback_action', $action );
 
