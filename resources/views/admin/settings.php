@@ -41,6 +41,7 @@ $members_page_id = (int) get_option( 'mf_page_for_members' );
 				<form method="post">
 					<input type="hidden" name="action" value="set-members-page">
 					<?php
+
 					wp_dropdown_pages(
 						array(
 							'name'              => 'page_for_members',
@@ -54,6 +55,7 @@ $members_page_id = (int) get_option( 'mf_page_for_members' );
 					wp_nonce_field( 'set-members-page' );
 
 					submit_button( __( 'Use This Page' ), 'primary', 'submit', false, array( 'id' => 'set-page' ) );
+
 					?>
 				</form>
 			</td>

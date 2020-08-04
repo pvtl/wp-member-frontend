@@ -109,6 +109,7 @@ class Member_Frontend {
 		add_action( 'template_redirect', array( $this, 'render' ), 10 );
 		add_action( 'mf_before_render', array( $this, 'before_render' ), 10, 1 );
 		add_filter( 'mf_render_vars', array( $this, 'render_vars' ), 10, 2 );
+		add_filter( 'body_class', array( $this, 'body_class' ), 10, 2 );
 
 		// Default handlers.
 		add_action( 'mf_action_account', array( $this, 'handle_account' ), 10, 1 );
@@ -808,5 +809,20 @@ class Member_Frontend {
 		}
 
 		return $errors[ $name ];
+	}
+
+	/**
+	 * Add member class to body.
+	 *
+	 * @param array $classes The existing classes.
+	 *
+	 * @return array;
+	 */
+	public function body_class( $classes ) {
+		if ( get_the_ID() === $this->member_page->ID ) {
+			$classes[] = 'member-frontend-page';
+		}
+
+		return $classes;
 	}
 }
