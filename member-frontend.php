@@ -27,8 +27,9 @@ require_once MF_PATH . '/autoload.php';
  *
  * @return Classes\Member_Frontend
  */
-function MF() {
+function MF() { // phpcs:ignore WordPress.NamingConventions
 	return Classes\Member_Frontend::instance();
 }
 
-$_GLOBALS['MF'] = MF();
+// MF() is available.
+do_action( 'mf_available' );

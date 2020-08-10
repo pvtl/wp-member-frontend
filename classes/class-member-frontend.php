@@ -88,7 +88,7 @@ class Member_Frontend {
 	 * Start secure session for flashing data.
 	 */
 	protected static function start_session() {
-		session_set_cookie_params( 3600, '/', '', true, true );
+		session_set_cookie_params( 3600, '/', '', is_ssl(), true );
 		session_start();
 	}
 
@@ -463,6 +463,8 @@ class Member_Frontend {
 	 * @return WP_User|WP_Error
 	 */
 	public function save_user( $data ) {
+		$user_data = array();
+
 		if ( isset( $data['ID'] ) && (int) $data['ID'] ) {
 			$user_data['ID'] = (int) $data['ID'];
 		}
@@ -471,7 +473,17 @@ class Member_Frontend {
 		$user_data['last_name']  = isset( $data['last_name'] ) ? sanitize_text_field( wp_unslash( $data['last_name'] ) ) : '';
 		$user_data['user_email'] = isset( $data['email'] ) ? sanitize_email( wp_unslash( $data['email'] ) ) : '';
 		$user_data['user_pass']  = isset( $data['password'] ) ? wp_unslash( $data['password'] ) : '';
-		$user_data['user_login'] = $user_data['user_email'];
+
+		if ( ! isset( $data['ID'] ) ) {
+			$duplicate = 1;
+			$user_name = sanitize_title_with_dashes( $user_data['first_name'] . ' ' . $user_data['last_name'], null, 'save' );
+
+			$user_data['user_login'] = $user_name;
+
+			while ( username_exists( $user_data['user_login'] ) ) {
+				$user_data['user_login'] = $user_name . '-' . ( ++$duplicate );
+			}
+		}
 
 		// Filter the user data array.
 		$user_data = apply_filters( 'mf_user_data', $user_data, $data );
@@ -819,7 +831,7 @@ class Member_Frontend {
 	 * @return array;
 	 */
 	public function body_class( $classes ) {
-		if ( get_the_ID() === $this->member_page->ID ) {
+		if ( $this->member_page && get_the_ID() === $this->member_page->ID ) {
 			$classes[] = 'member-frontend-page';
 		}
 
