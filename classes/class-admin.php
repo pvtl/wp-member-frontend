@@ -67,6 +67,10 @@ class Admin {
 	 * @param string $which The location of the extra table nav markup.
 	 */
 	public function add_member_filters( $which ) {
+		if ( $which !== 'top' ) {
+			return;
+		}
+
 		$member_filters = apply_filters( 'mf_member_filters', array() );
 
 		if ( empty( $member_filters ) ) {
@@ -75,8 +79,9 @@ class Admin {
 
 		echo '<div class="alignleft actions">';
 
-		$text_template   = '<input type="text" name="mf_filter_%s" placeholder="%s" value="%s">';
-		$select_template = '<select name="mf_filter_%s"><option value="">%s</option>%s</select>';
+		$text_template   = '<input type="text" style="margin-right: .5rem;" name="mf_filter_%s" placeholder="%s" value="%s">';
+		$date_template   = '<label style="vertical-align: initial; padding-right: .25rem;">%s</label><input type="date" name="mf_filter_%s" value="%s" style="margin-right: .5rem;">';
+		$select_template = '<select name="mf_filter_%s" style="margin-right: .5rem;"><option value="">%s</option>%s</select>';
 		$option_template = '<option value="%s"%s>%s</option>';
 
 		$filter_values = array_filter(
@@ -92,6 +97,10 @@ class Admin {
 
 			if ( ! isset( $filter['type'] ) || 'text' === $filter['type'] ) {
 				printf( $text_template, esc_attr( $name ), esc_attr( $filter['placeholder'] ), esc_attr( $value ) ); // phpcs:ignore
+			}
+
+			if ( 'date' === $filter['type'] ) {
+				printf( $date_template, esc_attr( $filter['placeholder'] ), esc_attr( $name ), esc_attr( $value ) ); // phpcs:ignore
 			}
 
 			if ( 'select' === $filter['type'] ) {
@@ -110,7 +119,7 @@ class Admin {
 
 		submit_button( 'Filter', 'primary', "mf_filter_{$which}", false );
 
-		echo '</div>';
+		echo '&nbsp;<a href="' . esc_url( get_admin_url( null, 'users.php' ) ) . '" class="button">Clear Form</a></div>';
 	}
 
 	/**
@@ -140,7 +149,7 @@ class Admin {
 		foreach ( $filter_values as $filter => $value ) {
 			$filter_name = str_replace( 'mf_filter_', '', $filter );
 
-			if ( ! isset( $member_filters[ $filter_name ] ) ) {
+			if ( ! $value || ! isset( $member_filters[ $filter_name ] ) ) {
 				continue;
 			}
 
