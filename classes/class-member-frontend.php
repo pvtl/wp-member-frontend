@@ -349,6 +349,12 @@ class Member_Frontend {
 			$include_path = $override;
 		}
 
+		$user = $this->get_current_user();
+		$vars = apply_filters( 'mf_render_vars', array( 'user' => $user ), null );
+
+		// phpcs:ignore WordPress.PHP.DontExtract
+		extract( $vars, EXTR_SKIP );
+
 		require $include_path;
 	}
 
@@ -440,7 +446,7 @@ class Member_Frontend {
 
 		do_action( 'mf_after_register_user', $user, $data );
 
-		$auto_login        = apply_filters( 'mf_auto_login', true );
+		$auto_login        = apply_filters( 'mf_auto_login', true, $user );
 		$success_message   = apply_filters( 'mf_registered_success_message', 'Account created successfully' );
 		$register_redirect = apply_filters( 'mf_register_redirect', $this->url( 'dashboard' ), $user );
 
