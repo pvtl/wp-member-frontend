@@ -109,7 +109,7 @@ class Actions {
 	 * Handle an action post.
 	 */
 	public function action_handler() {
-		if ( ! $this->is( 'post' ) ) {
+		if ( ! $this->is( 'post' ) && ! isset( $_REQUEST['_mf_call'] ) ) {
 			return;
 		}
 
@@ -119,14 +119,17 @@ class Actions {
 			return;
 		}
 
-		$data = wp_unslash( $_POST );
+		$data = wp_unslash( $_REQUEST );
 		$user = wp_get_current_user();
 
 		if (
-			! isset( $data['mf_nonce'] )
-			|| (
-				! wp_verify_nonce( $data['mf_nonce'], 'mf_form_nopriv' )
-				&& ! wp_verify_nonce( $data['mf_nonce'], "mf_form_priv_{$user->ID}" )
+			! isset( $_REQUEST['_mf_call'] )
+			&& (
+				! isset( $data['mf_nonce'] )
+				|| (
+					! wp_verify_nonce( $data['mf_nonce'], 'mf_form_nopriv' )
+					&& ! wp_verify_nonce( $data['mf_nonce'], "mf_form_priv_{$user->ID}" )
+				)
 			)
 		) {
 			wp_die( 'Nonce verification failed' );
