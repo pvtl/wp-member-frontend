@@ -12,7 +12,7 @@
  * @package MemberFrontend
  */
 
-namespace App\Plugins\Pvtl;
+use App\Plugins\Pvtl\Classes;
 
 defined( 'ABSPATH' ) || die();
 
@@ -30,6 +30,8 @@ require_once MF_PATH . '/autoload.php';
 function MF() { // phpcs:ignore WordPress.NamingConventions
 	return Classes\Member_Frontend::instance();
 }
+
+MF();
 
 // MF() is available.
 do_action( 'mf_available' );
