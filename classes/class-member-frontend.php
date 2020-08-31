@@ -7,6 +7,7 @@
 
 namespace App\Plugins\Pvtl\Classes;
 
+use WP;
 use WP_Post;
 use WP_User;
 use WP_Error;
@@ -45,7 +46,7 @@ class Member_Frontend {
 	 *
 	 * @var Actions
 	 */
-	protected $actions;
+	public $actions;
 
 	/**
 	 * The role manager.
@@ -108,8 +109,10 @@ class Member_Frontend {
 		add_action( 'init', array( $this, 'rewrites' ) );
 		add_action( 'template_redirect', array( $this, 'render' ), 10 );
 		add_action( 'mf_before_render', array( $this, 'before_render' ), 10, 1 );
+		add_action( 'parse_request', array( $this, 'parse_request_overrides' ) );
 		add_filter( 'mf_render_vars', array( $this, 'render_vars' ), 10, 2 );
 		add_filter( 'body_class', array( $this, 'body_class' ), 10, 2 );
+		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
 
 		// Default handlers.
 		add_action( 'mf_action_profile', array( $this, 'handle_profile' ), 10, 1 );
@@ -119,10 +122,44 @@ class Member_Frontend {
 	}
 
 	/**
+	 * Add custom query vars to request.
+	 *
+	 * @param array $query_vars The existing query vars.
+	 *
+	 * @return array
+	 */
+	public function add_query_vars( $query_vars ) {
+		$query_vars[] = 'mf_action';
+
+		return $query_vars;
+	}
+
+	/**
+	 * Check if a page exists before rendering
+	 * member templates.
+	 *
+	 * @param \WP $request The request object.
+	 *
+	 * @return \WP
+	 */
+	public function parse_request_overrides( WP $request ) {
+		if ( isset( $request->query_vars['mf_action'] ) ) {
+			$page = get_page_by_path( $request->request );
+
+			if ( $page ) {
+				$request->query_vars['page_id'] = $page->ID;
+				unset( $request->query_vars['mf_action'] );
+			}
+		}
+
+		return $request;
+	}
+
+	/**
 	 * Add custom rewrite rules.
 	 */
 	public function rewrites() {
-		if ( ! $this->member_page ) {
+		if ( ! $this->member_page || get_the_ID() ) {
 			return;
 		}
 
@@ -142,8 +179,8 @@ class Member_Frontend {
 	/**
 	 * Return the URL for an action.
 	 *
-	 * @param string $action The action for the URL.
-	 * @param array  $params Optional query parameters.
+	 * @param ?string $action The action for the URL.
+	 * @param array   $params Optional query parameters.
 	 *
 	 * @return string
 	 */
@@ -326,6 +363,8 @@ class Member_Frontend {
 			$include_path = $override;
 		}
 
+		$include_path = apply_filters( 'mf_view', $include_path, $name );
+
 		// phpcs:ignore WordPress.PHP.DontExtract
 		extract( $vars, EXTR_SKIP );
 
@@ -348,6 +387,8 @@ class Member_Frontend {
 		if ( $override ) {
 			$include_path = $override;
 		}
+
+		$include_path = apply_filters( 'mf_partial', $include_path, $name );
 
 		$user = $this->get_current_user();
 		$vars = apply_filters( 'mf_render_vars', array( 'user' => $user ), null );
@@ -419,8 +460,8 @@ class Member_Frontend {
 	/**
 	 * Redirect to an action.
 	 *
-	 * @param string $action     The action to redirect to.
-	 * @param array  $with_input Redirect with stored input.
+	 * @param ?string $action     The action to redirect to.
+	 * @param array   $with_input Redirect with stored input.
 	 */
 	public function redirect( $action = null, $with_input = array() ) {
 		if ( ! empty( $with_input ) ) {
@@ -428,6 +469,20 @@ class Member_Frontend {
 		}
 
 		wp_safe_redirect( $this->url( $action ) );
+		die();
+	}
+
+	/**
+	 * Redirect to an action.
+	 *
+	 * @param array $with_input Redirect with stored input.
+	 */
+	public function back( $with_input = array() ) {
+		if ( ! empty( $with_input ) ) {
+			$this->set_flash( 'input', $with_input );
+		}
+
+		wp_safe_redirect( $_SERVER['HTTP_REFERER'] );
 		die();
 	}
 
@@ -441,7 +496,7 @@ class Member_Frontend {
 
 		if ( is_wp_error( $user ) ) {
 			$this->set_flash( 'error', $user->get_error_message() );
-			$this->redirect( 'register', $data );
+			$this->back( $data );
 		}
 
 		do_action( 'mf_after_register_user', $user, $data );
