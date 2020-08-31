@@ -323,6 +323,10 @@ class Member_Frontend {
 		add_filter(
 			'the_content',
 			function ( $content ) use ( $action ) {
+				if ( ! in_the_loop() ) {
+					return $content;
+				}
+
 				$user = $this->get_current_user();
 				$vars = apply_filters(
 					'mf_render_vars',
