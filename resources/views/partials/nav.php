@@ -16,7 +16,7 @@
 			<a href="<?php echo $this->url( 'dashboard' ); ?>">Dashboard</a>
 		</li>
 		<li>
-			<a href="<?php echo $this->url( 'account' ); ?>">Account</a>
+			<a href="<?php echo $this->url( 'profile' ); ?>">Profile</a>
 		</li>
 		<li>
 			<a href="<?php echo $this->get_logout_url(); ?>">Logout</a>

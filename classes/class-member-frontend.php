@@ -112,7 +112,7 @@ class Member_Frontend {
 		add_filter( 'body_class', array( $this, 'body_class' ), 10, 2 );
 
 		// Default handlers.
-		add_action( 'mf_action_account', array( $this, 'handle_account' ), 10, 1 );
+		add_action( 'mf_action_profile', array( $this, 'handle_profile' ), 10, 1 );
 		add_action( 'mf_action_register', array( $this, 'handle_register' ), 10, 1 );
 		add_action( 'mf_action_reset_password', array( $this, 'handle_reset_password' ), 10, 1 );
 		add_action( 'mf_action_forgot_password', array( $this, 'handle_forgot_password' ), 10, 1 );
@@ -525,11 +525,11 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Handle Update Account action.
+	 * Handle Update Profile action.
 	 *
 	 * @param array $data The post data.
 	 */
-	public function handle_account( $data ) {
+	public function handle_profile( $data ) {
 		$current_user = $this->get_current_user();
 
 		if ( ! $current_user ) {
@@ -543,11 +543,11 @@ class Member_Frontend {
 
 		if ( is_wp_error( $user ) ) {
 			$this->set_flash( 'error', $user->get_error_message() );
-			$this->redirect( 'account', $data );
+			$this->redirect( 'profile', $data );
 		}
 
-		$this->set_flash( 'success', 'Account updated successfully' );
-		$this->redirect( 'account' );
+		$this->set_flash( 'success', 'Profile updated successfully' );
+		$this->redirect( 'profile' );
 	}
 
 	/**
