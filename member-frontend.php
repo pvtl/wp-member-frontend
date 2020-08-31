@@ -7,7 +7,7 @@
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * @package MemberFrontend
  */
@@ -32,6 +32,3 @@ function MF() { // phpcs:ignore WordPress.NamingConventions
 }
 
 MF();
-
-// MF() is available.
-do_action( 'mf_available' );
