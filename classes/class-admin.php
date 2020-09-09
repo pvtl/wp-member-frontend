@@ -10,7 +10,6 @@
 namespace App\Plugins\Pvtl\Classes;
 
 use \WP_User_Query;
-use function \App\Plugins\Pvtl\MF;
 
 defined( 'ABSPATH' ) || die;
 
@@ -67,7 +66,7 @@ class Admin {
 	 * @param string $which The location of the extra table nav markup.
 	 */
 	public function add_member_filters( $which ) {
-		if ( $which !== 'top' ) {
+		if ( 'top' !== $which ) {
 			return;
 		}
 
@@ -77,7 +76,16 @@ class Admin {
 			return;
 		}
 
-		echo '<div class="alignleft actions">';
+		?>
+		<style>
+			.mf_actions {
+				float: none;
+				margin: 1rem 0 0;
+			}
+		</style>
+		<?php
+
+		echo '<br class="clear"><div class="alignleft actions mf_actions">';
 
 		$text_template   = '<input type="text" style="margin-right: .5rem;" name="mf_filter_%s" placeholder="%s" value="%s">';
 		$date_template   = '<label style="vertical-align: initial; padding-right: .25rem;">%s</label><input type="date" name="mf_filter_%s" value="%s" style="margin-right: .5rem;">';
@@ -153,10 +161,18 @@ class Admin {
 				continue;
 			}
 
-			$meta_query[] = array(
-				'key'   => $filter_name,
-				'value' => $value,
+			$filter_queries = array(
+				array(
+					'key'   => $filter_name,
+					'value' => $value,
+				),
 			);
+
+			$filter_queries = apply_filters( 'mf_filter_meta', $filter_queries, $filter_name, $value );
+
+			foreach ( $filter_queries as $filter_query ) {
+				$meta_query[] = $filter_query;
+			}
 		}
 
 		$query->set( 'meta_query', $meta_query );
