@@ -375,22 +375,14 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Renders a view.
+	 * Locate a view template.
 	 *
-	 * @param string $name Path to the view.
-	 * @param array  $vars Optional variables to pass to scope.
+	 * @param string $name The view name.
 	 *
 	 * @return string
 	 */
-	public function view( $name, $vars = array() ) {
-		$name = str_replace(
-			array(
-				'_',
-				'/',
-			),
-			'-',
-			$name
-		);
+	protected function locate_view( $name ) {
+		$name = str_replace( '_', '-', $name );
 
 		$include_path = MF_PATH . "/resources/views/{$name}.php";
 
@@ -400,14 +392,41 @@ class Member_Frontend {
 			$include_path = $override;
 		}
 
-		$include_path = apply_filters( 'mf_view', $include_path, $name );
+		return apply_filters( 'mf_view', $include_path, $name );
+	}
+
+	/**
+	 * Renders a view.
+	 *
+	 * @param string $name Path to the view.
+	 * @param array  $vars Optional variables to pass to scope.
+	 *
+	 * @return string
+	 */
+	public function view( $name, $vars = array() ) {
+		$file_paths = array(
+			$name,
+			$name . '/index',
+		);
+
+		foreach ( $file_paths as $file_path ) {
+			$include_path = $this->locate_view( $file_path );
+
+			if ( file_exists( $include_path ) ) {
+				break;
+			}
+		}
+
+		if ( ! file_exists( $include_path ) ) {
+			wp_die( 'View not found' );
+		}
 
 		// phpcs:ignore WordPress.PHP.DontExtract
 		extract( $vars, EXTR_SKIP );
 
 		ob_start();
 
-		include $include_path;
+		require $include_path;
 
 		return ob_get_clean();
 	}
