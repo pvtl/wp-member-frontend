@@ -88,7 +88,7 @@ class Actions {
 	/**
 	 * Return the current action.
 	 *
-	 * @return string
+	 * @return ?string
 	 */
 	public function action() {
 		if ( (int) get_option( 'mf_page_for_members' ) !== get_the_ID() ) {

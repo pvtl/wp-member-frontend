@@ -146,7 +146,11 @@ class Member_Frontend {
 		if ( isset( $request->query_vars['mf_action'] ) ) {
 			$page = get_page_by_path( $request->request );
 
-			if ( $page ) {
+			if ( $page && ! empty( $page->post_content ) ) {
+				$action = str_replace( '-', '_', $request->query_vars['mf_action'] );
+
+				$this->before_render( $action );
+
 				$request->query_vars['page_id'] = $page->ID;
 				unset( $request->query_vars['mf_action'] );
 			}
@@ -165,9 +169,31 @@ class Member_Frontend {
 
 		$path = get_page_uri( $this->member_page );
 
+		// Match first level paths.
 		add_rewrite_rule(
-			"^{$path}/([a-z\-]+)?",
+			"^{$path}\/([a-z0-9\-]+)?$",
 			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]',
+			'top'
+		);
+
+		// Match first level paths.
+		add_rewrite_rule(
+			"^{$path}\/([a-z0-9\-]+)(?:\/page\/([0-9]+))$",
+			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]&paged=$matches[2]',
+			'top'
+		);
+
+		// Match second level paths.
+		add_rewrite_rule(
+			"^{$path}\/([a-z0-9\-]+)(?:\/([a-z0-9\-]+))$",
+			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]/$matches[2]',
+			'top'
+		);
+
+		// Match second level paths.
+		add_rewrite_rule(
+			"^{$path}\/([a-z0-9\-]+)(?:\/([a-z0-9\-]+))(?:\/page\/([0-9]+))$",
+			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]/$matches[2]&paged=$matches[3]',
 			'top'
 		);
 
@@ -357,7 +383,14 @@ class Member_Frontend {
 	 * @return string
 	 */
 	public function view( $name, $vars = array() ) {
-		$name = str_replace( '_', '-', $name );
+		$name = str_replace(
+			array(
+				'_',
+				'/',
+			),
+			'-',
+			$name
+		);
 
 		$include_path = MF_PATH . "/resources/views/{$name}.php";
 
@@ -374,7 +407,7 @@ class Member_Frontend {
 
 		ob_start();
 
-		require $include_path;
+		include $include_path;
 
 		return ob_get_clean();
 	}
