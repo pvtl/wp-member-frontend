@@ -887,14 +887,19 @@ class Member_Frontend {
 	 * @return mixed
 	 */
 	public function old( $name ) {
-		$data = isset( $_SESSION['flash']['input'] ) ? $_SESSION['flash']['input'] : false;
+		static $data = array();
 
-		if ( $data ) {
+		if ( empty( $data ) ) {
+			$data = isset( $_SESSION['flash']['input'] ) ? $_SESSION['flash']['input'] : array();
 			$data = maybe_unserialize( $data );
+		}
 
-			if ( isset( $data[ $name ] ) ) {
-				return esc_attr( $data[ $name ] );
+		if ( is_array( $data ) && isset( $data[ $name ] ) ) {
+			if ( is_array( $data[ $name ] ) ) {
+				return $data[ $name ];
 			}
+
+			return esc_attr( $data[ $name ] );
 		}
 
 		return '';
