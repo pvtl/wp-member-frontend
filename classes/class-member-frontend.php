@@ -906,19 +906,19 @@ class Member_Frontend {
 	 * @return mixed
 	 */
 	public function old( $name ) {
-		static $data = array();
+		static $data     = array();
+		static $data_dot = array();
 
 		if ( empty( $data ) ) {
-			$data = isset( $_SESSION['flash']['input'] ) ? $_SESSION['flash']['input'] : array();
-			$data = maybe_unserialize( $data );
+			$data     = isset( $_SESSION['flash']['input'] ) ? $_SESSION['flash']['input'] : array();
+			$data     = maybe_unserialize( $data );
+			$data_dot = static::dot( $data );
 		}
 
-		if ( is_array( $data ) && isset( $data[ $name ] ) ) {
-			if ( is_array( $data[ $name ] ) ) {
-				return $data[ $name ];
-			}
-
-			return esc_attr( $data[ $name ] );
+		if ( isset( $data[ $name ] ) ) {
+			return $data[ $name ];
+		} elseif ( isset( $data_dot[ $name ] ) ) {
+			return $data_dot[ $name ];
 		}
 
 		return '';
@@ -929,20 +929,25 @@ class Member_Frontend {
 	 *
 	 * @param string $name The field name.
 	 *
-	 * @return string
+	 * @return mixed
 	 */
 	public function get_error( $name ) {
-		if ( ! isset( $_SESSION['flash']['error'] ) ) {
-			return null;
+		static $errors     = array();
+		static $errors_dot = array();
+
+		if ( empty( $errors ) ) {
+			$errors     = isset( $_SESSION['flash']['error'] ) ? $_SESSION['flash']['error'] : array();
+			$errors     = maybe_unserialize( $errors );
+			$errors_dot = static::dot( $errors );
 		}
 
-		$errors = maybe_unserialize( $_SESSION['flash']['error'] );
-
-		if ( ! is_array( $errors ) || ! isset( $errors[ $name ] ) ) {
-			return null;
+		if ( isset( $errors[ $name ] ) ) {
+			return $errors[ $name ];
+		} elseif ( isset( $errors_dot[ $name ] ) ) {
+			return $errors_dot[ $name ];
 		}
 
-		return $errors[ $name ];
+		return '';
 	}
 
 	/**
@@ -958,5 +963,27 @@ class Member_Frontend {
 		}
 
 		return $classes;
+	}
+
+	/**
+	 * Flatten a multi-dimensional associative array with dots.
+	 *
+	 * @param iterable $array   The array to flatten.
+	 * @param string   $prepend The parent key to prepend.
+	 *
+	 * @return array
+	 */
+	public static function dot( $array, $prepend = '' ) {
+		$results = array();
+
+		foreach ( $array as $key => $value ) {
+			if ( is_array( $value ) && ! empty( $value ) ) {
+				$results = array_merge( $results, static::dot( $value, $prepend . $key . '.' ) );
+			} else {
+				$results[ $prepend . $key ] = $value;
+			}
+		}
+
+		return $results;
 	}
 }
