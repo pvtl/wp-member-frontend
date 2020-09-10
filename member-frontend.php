@@ -2,12 +2,11 @@
 /**
  * Plugin Name: Member Frontend & API by Pivotal
  * Plugin URI: https://github.com/pvtl/wp-member-frontend
- * Description: Adds a member frontend custom post type, taxonomy and fields.
- *              Also opens API endpoints for the abetterchoice mobile app.
+ * Description: Add a members area to WordPress with unlimited custom views.
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
- * Version: 1.2.0
+ * Version: 1.2.1
  *
  * @package MemberFrontend
  */
