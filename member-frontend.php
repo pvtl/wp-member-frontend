@@ -6,7 +6,7 @@
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
- * Version: 1.2.1
+ * Version: 1.2.2
  *
  * @package MemberFrontend
  */
