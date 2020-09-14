@@ -551,6 +551,10 @@ class Member_Frontend {
 		$user = $this->save_user( $data );
 
 		if ( is_wp_error( $user ) ) {
+			if ( static::accepts_json() ) {
+				static::json( array( 'errors' => $user->get_error_message() ), 400 );
+			}
+
 			$this->set_flash( 'error', $user->get_error_message() );
 			$this->back( $data );
 		}
@@ -566,6 +570,10 @@ class Member_Frontend {
 		}
 
 		$this->set_flash( 'success', $success_message );
+
+		if ( static::accepts_json() ) {
+			static::json( array( 'redirect' => $register_redirect ) );
+		}
 
 		// Redirect may be non member action.
 		wp_safe_redirect( $register_redirect );
@@ -644,6 +652,10 @@ class Member_Frontend {
 		$current_user = $this->get_current_user();
 
 		if ( ! $current_user ) {
+			if ( static::accepts_json() ) {
+				static::json( array( 'error' => 'An error occurred' ), 400 );
+			}
+
 			$this->set_flash( 'error', 'An error occurred' );
 			$this->redirect( 'login' );
 		}
@@ -653,11 +665,20 @@ class Member_Frontend {
 		$user = $this->save_user( $data );
 
 		if ( is_wp_error( $user ) ) {
+			if ( static::accepts_json() ) {
+				static::json( array( 'errors' => $user->get_error_message() ), 400 );
+			}
+
 			$this->set_flash( 'error', $user->get_error_message() );
 			$this->redirect( 'profile', $data );
 		}
 
 		$this->set_flash( 'success', 'Profile updated successfully' );
+
+		if ( static::accepts_json() ) {
+			static::json( array( 'redirect' => $this->url( 'profile' ) ) );
+		}
+
 		$this->redirect( 'profile' );
 	}
 
@@ -985,5 +1006,27 @@ class Member_Frontend {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Return whether the current request accepts
+	 * a JSON response.
+	 *
+	 * @return bool
+	 */
+	public static function accepts_json() {
+		return isset( $_SERVER['HTTP_ACCEPT'] ) && strpos( $_SERVER['HTTP_ACCEPT'], 'application/json' ) !== false;
+	}
+
+	/**
+	 * Output JSON response.
+	 *
+	 * @param mixed $data        The data to encode.
+	 * @param int   $status_code The HTTP status code.
+	 */
+	public static function json( $data, $status_code = 200 ) {
+		status_header( $status_code );
+		echo wp_json_encode( $data );
+		die();
 	}
 }
