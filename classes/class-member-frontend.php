@@ -435,8 +435,9 @@ class Member_Frontend {
 	 * Renders a view partial.
 	 *
 	 * @param string $name Path to the partial.
+	 * @param array  $vars Extra partial key value data.
 	 */
-	protected function partial( $name ) {
+	protected function partial( $name, $vars = array() ) {
 		$include_path = MF_PATH . "/resources/views/partials/{$name}.php";
 		$override     = locate_template( "member-frontend/partials/{$name}.php" );
 
@@ -447,7 +448,14 @@ class Member_Frontend {
 		$include_path = apply_filters( 'mf_partial', $include_path, $name );
 
 		$user = $this->get_current_user();
-		$vars = apply_filters( 'mf_render_vars', array( 'user' => $user ), null );
+		$vars = apply_filters(
+			'mf_render_vars',
+			array_merge(
+				$vars,
+				array( 'user' => $user )
+			),
+			null
+		);
 
 		// phpcs:ignore WordPress.PHP.DontExtract
 		extract( $vars, EXTR_SKIP );
