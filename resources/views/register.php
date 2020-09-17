@@ -51,8 +51,8 @@ $registration_errors = $this->get_flash( 'error' );
 		</div>
 
 		<div>
-			<label for="pass2">Confirm Password</label>
-			<input type="password" id="pass2" name="pass2" autocomplete="off">
+			<label for="confirm_password">Confirm Password</label>
+			<input type="password" id="confirm_password" name="confirm_password" autocomplete="off">
 		</div>
 	</fieldset>
 
