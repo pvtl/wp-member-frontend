@@ -504,7 +504,7 @@ class MemberFrontend {
 		// Filter the user data array.
 		$user_data = apply_filters( 'mf_user_before_save', $user_data );
 
-		add_filter( 'mf_validate_user', array( $this, 'validateUser' ), 5, 2 );
+		add_filter( 'mf_validate_user', array( $this, 'validate_user' ), 5, 2 );
 
 		$errors = apply_filters( 'mf_validate_user', array(), $user_data );
 
@@ -574,7 +574,7 @@ class MemberFrontend {
 		// Filter the user data array.
 		$user_data = apply_filters( 'mf_user_before_save', $user_data );
 
-		add_filter( 'mf_validate_user', array( $this, 'validateUser' ), 5, 2 );
+		add_filter( 'mf_validate_user', array( $this, 'validate_user' ), 5, 2 );
 
 		$errors = apply_filters( 'mf_validate_user', array(), $user_data );
 
