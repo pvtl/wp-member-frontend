@@ -58,7 +58,7 @@ class MemberFrontend {
 	 */
 	public function __construct() {
 		// Start a session for flashing data.
-		session_set_cookie_params( 3600, '/', '', true, true );
+		session_set_cookie_params( 3600, '/', '', is_ssl(), true );
 
 		if ( session_status() === PHP_SESSION_NONE ) {
 			session_start();
@@ -691,6 +691,7 @@ class MemberFrontend {
 
 		if ( ! isset( $user_data['ID'] ) || ! empty( $user_data['user_pass'] ) ) {
 			$password_error = $this->validate_password( $user_data['user_pass'], $_POST['confirm_password'] );
+
 			if ( true !== $password_error ) {
 				$errors['user_pass'] = $this->validate_password( $user_data['user_pass'], $_POST['confirm_password'] );
 			}
