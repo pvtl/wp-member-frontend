@@ -67,6 +67,10 @@ class Role_Manager {
 				$role_options['capabilities'] = array();
 			}
 
+			// Remove the role if it exists.
+			remove_role( $role_name );
+
+			// Add a possibly new version of the role.
 			add_role( $role_name, $role_options['name'], $role_options['capabilities'] );
 		}
 	}
@@ -107,13 +111,15 @@ class Role_Manager {
 			foreach ( $loaded_roles as $role_key => $role_options ) {
 				if ( ! isset( $roles_to_add[ $role_key ] ) ) {
 					$roles_to_remove[] = $role_key;
-				} else {
-					$old_hash = crc32( serialize( $role_options ) );
-					$new_hash = crc32( serialize( $roles_to_add[ $role_key ] ) );
 
-					if ( $old_hash !== $new_hash ) {
-						unset( $roles_to_add[ $role_key ] );
-					}
+					continue;
+				}
+
+				$old_serialized = serialize( $role_options );
+				$new_serialized = serialize( $roles_to_add[ $role_key ] );
+
+				if ( $old_serialized === $new_serialized ) {
+					unset( $roles_to_add[ $role_key ] );
 				}
 			}
 		}
