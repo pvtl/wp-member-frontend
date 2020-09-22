@@ -437,7 +437,7 @@ class Member_Frontend {
 	 * @param string $name Path to the partial.
 	 * @param array  $vars Extra partial key value data.
 	 */
-	protected function partial( $name, $vars = array() ) {
+	public function partial( $name, $vars = array() ) {
 		$include_path = MF_PATH . "/resources/views/partials/{$name}.php";
 		$override     = locate_template( "member-frontend/partials/{$name}.php" );
 
