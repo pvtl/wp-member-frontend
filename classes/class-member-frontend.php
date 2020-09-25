@@ -242,7 +242,9 @@ class Member_Frontend {
 			wp_cache_add( 'mf_members_page', $_post, 'posts' );
 		}
 
-		$this->member_page = get_post( $_post );
+		if ( $_post ) {
+			$this->member_page = get_post( $_post );
+		}
 	}
 
 	/**
@@ -280,6 +282,10 @@ class Member_Frontend {
 	 * @param string $action The action that will be rendered.
 	 */
 	public function before_render( $action ) {
+		if ( ! $this->is_member_page() ) {
+			return;
+		}
+
 		// Throw 404 page.
 		if ( ! $action ) {
 			global $wp_query;
@@ -335,7 +341,7 @@ class Member_Frontend {
 	 * Render the member frontend.
 	 */
 	public function render() {
-		if ( is_admin() || ! is_page( $this->member_page ) ) {
+		if ( ! $this->is_member_page() ) {
 			return;
 		}
 
@@ -987,7 +993,7 @@ class Member_Frontend {
 	 * @return array;
 	 */
 	public function body_class( $classes ) {
-		if ( $this->member_page && get_the_ID() === $this->member_page->ID ) {
+		if ( $this->is_member_page() ) {
 			$classes[] = 'member-frontend-page';
 		}
 
@@ -1036,5 +1042,14 @@ class Member_Frontend {
 		status_header( $status_code );
 		echo wp_json_encode( $data );
 		die();
+	}
+
+	/**
+	 * Returns true if the current page is the members page.
+	 *
+	 * @return bool
+	 */
+	public function is_member_page() {
+		return ! is_admin() && $this->member_page && get_the_ID() === $this->member_page->ID;
 	}
 }

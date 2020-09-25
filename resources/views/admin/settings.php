@@ -18,6 +18,8 @@ if ( ! empty( $action ) ) {
 		$members_page_id = isset( $_POST['page_for_members'] ) ? (int) $_POST['page_for_members'] : 0;
 		update_option( 'mf_page_for_members', $members_page_id );
 
+		wp_cache_delete( 'mf_members_page', 'posts' );
+
 		$updated_message = __( 'Privacy Policy page updated successfully.' );
 
 		add_settings_error( 'page_for_members', 'page_for_members', $updated_message, 'success' );
