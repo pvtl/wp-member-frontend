@@ -307,13 +307,18 @@ class Member_Frontend {
 		);
 
 		// Redirect to login if not logged in.
-		if ( ! $this->get_current_user() && ! in_array( $action, $allowed, true ) ) {
+		if ( ! is_user_logged_in() && ! in_array( $action, $allowed, true ) ) {
 			$this->set_flash( 'error', 'You must be logged in to access this area' );
-			$this->redirect( 'login' );
+			$this->redirect(
+				'login',
+				array(
+					'redirect_to' => $this->url( $action ),
+				)
+			);
 		}
 
 		// Redirect to dashboard if already logged in.
-		if ( $this->get_current_user() && in_array( $action, $allowed, true ) ) {
+		if ( is_user_logged_in() && in_array( $action, $allowed, true ) ) {
 			$this->redirect( 'dashboard' );
 		}
 

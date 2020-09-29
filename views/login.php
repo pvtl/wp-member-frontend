@@ -13,10 +13,16 @@ $this->partial( 'notices' );
 <h2>Login</h2>
 <?php
 
+$redirect_to = $this->old( 'redirect_to' );
+
+if ( ! $redirect_to ) {
+	$redirect_to = $this->url();
+}
+
 wp_login_form(
 	array(
 		'echo'           => true,
-		'redirect'       => $this->url(),
+		'redirect'       => $redirect_to,
 		'form_id'        => 'mf_login_form',
 		'label_username' => __( 'Email' ),
 		'label_password' => __( 'Password' ),
