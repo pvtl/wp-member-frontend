@@ -6,7 +6,7 @@
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
- * Version: 1.3.3
+ * Version: 1.3.4
  *
  * @package Member_Frontend
  */
@@ -20,6 +20,9 @@ define( 'MF_PATH', __DIR__ );
 
 // Autoload plugin classes.
 require_once MF_PATH . '/autoload.php';
+
+// Load helper functions.
+require_once MF_PATH . '/helpers.php';
 
 /**
  * Returns the main instance of MF.

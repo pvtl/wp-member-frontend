@@ -95,7 +95,7 @@ class Actions {
 			return null;
 		}
 
-		$action = str_replace( '-', '_', get_query_var( 'mf_action' ) );
+		$action = mf_url_to_action( get_query_var( 'mf_action' ) );
 		$action = apply_filters( 'mf_fallback_action', $action );
 
 		if ( ! $action ) {

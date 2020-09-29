@@ -147,7 +147,7 @@ class Member_Frontend {
 			$page = get_page_by_path( $request->request );
 
 			if ( $page && ! empty( $page->post_content ) ) {
-				$action = str_replace( '-', '_', $request->query_vars['mf_action'] );
+				$action = mf_url_to_action( $request->query_vars['mf_action'] );
 
 				$this->before_render( $action );
 
@@ -214,7 +214,7 @@ class Member_Frontend {
 		$url = get_permalink( $this->member_page );
 
 		if ( $action ) {
-			$url .= str_replace( '_', '-', $action ) . '/';
+			$url .= mf_action_to_url( $action ) . '/';
 		}
 
 		$url = esc_url( $url );
@@ -388,7 +388,7 @@ class Member_Frontend {
 	 * @return string
 	 */
 	protected function locate_view( $name ) {
-		$name = str_replace( '_', '-', $name );
+		$name = mf_action_to_url( $name );
 
 		$include_path = MF_PATH . "/resources/views/{$name}.php";
 
