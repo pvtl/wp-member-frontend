@@ -149,7 +149,7 @@ class Member_Frontend {
 			if ( $page && ! empty( $page->post_content ) ) {
 				$action = mf_url_to_action( $request->query_vars['mf_action'] );
 
-				$this->before_render( $action );
+				$this->before_render( $action, true );
 
 				$request->query_vars['page_id'] = $page->ID;
 				unset( $request->query_vars['mf_action'] );
@@ -280,9 +280,10 @@ class Member_Frontend {
 	 * Runs before the page is rendered.
 	 *
 	 * @param string $action The action that will be rendered.
+	 * @param bool   $force  Whether to skip member page checks.
 	 */
-	public function before_render( $action ) {
-		if ( ! $this->is_member_page() ) {
+	public function before_render( $action, $force = false ) {
+		if ( ! $force && ! $this->is_member_page() ) {
 			return;
 		}
 
