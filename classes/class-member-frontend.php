@@ -390,7 +390,7 @@ class Member_Frontend {
 	protected function locate_view( $name ) {
 		$name = mf_action_to_url( $name );
 
-		$include_path = MF_PATH . "/resources/views/{$name}.php";
+		$include_path = MF_PATH . "/views/{$name}.php";
 
 		$override = locate_template( "member-frontend/{$name}.php" );
 
@@ -444,7 +444,7 @@ class Member_Frontend {
 	 * @param array  $vars Extra partial key value data.
 	 */
 	public function partial( $name, $vars = array() ) {
-		$include_path = MF_PATH . "/resources/views/partials/{$name}.php";
+		$include_path = MF_PATH . "/views/partials/{$name}.php";
 		$override     = locate_template( "member-frontend/partials/{$name}.php" );
 
 		if ( $override ) {

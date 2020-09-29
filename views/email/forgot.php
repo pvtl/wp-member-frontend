@@ -2,7 +2,7 @@
 /**
  * Forgot password email notification.
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  * @global $site_name
  * @global $user_login
  * @global $reset_url

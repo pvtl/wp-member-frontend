@@ -2,7 +2,7 @@
 /**
  * Member navigation view.
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  *
  * @var \App\Plugins\Pvtl\Classes\Member_Frontend $this
  */
