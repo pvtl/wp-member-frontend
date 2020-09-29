@@ -481,11 +481,13 @@ class Member_Frontend {
 	 * @return WP_User
 	 */
 	public function get_current_user() {
-		if ( is_user_logged_in() ) {
-			return wp_get_current_user();
+		static $user = null;
+
+		if ( ! $user ) {
+			$user = wp_get_current_user();
 		}
 
-		return null;
+		return $user->exists() ? $user : null;
 	}
 
 	/**
