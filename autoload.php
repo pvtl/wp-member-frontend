@@ -2,7 +2,7 @@
 /**
  * Autoload package classes.
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  */
 
 spl_autoload_register(

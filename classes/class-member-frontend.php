@@ -2,7 +2,7 @@
 /**
  * Member Frontend.
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  */
 
 namespace App\Plugins\Pvtl\Classes;

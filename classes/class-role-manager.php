@@ -2,7 +2,7 @@
 /**
  * Roles.
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  */
 
 namespace App\Plugins\Pvtl\Classes;

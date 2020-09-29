@@ -6,9 +6,9 @@
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
- * Version: 1.3.2
+ * Version: 1.3.3
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  */
 
 use App\Plugins\Pvtl\Classes;

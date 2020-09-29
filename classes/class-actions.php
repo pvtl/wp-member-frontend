@@ -2,7 +2,7 @@
 /**
  * Action handlers.
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  */
 
 namespace App\Plugins\Pvtl\Classes;
@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || die;
 /**
  * Class Actions
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  */
 class Actions {
 	/**

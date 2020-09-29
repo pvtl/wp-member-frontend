@@ -2,7 +2,7 @@
 /**
  * Admin filters.
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  *
  * phpcs:disable WordPress.Security.NonceVerification
  */
@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || die;
 /**
  * Class Admin
  *
- * @package MemberFrontend
+ * @package Member_Frontend
  */
 class Admin {
 	/**
