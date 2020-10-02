@@ -297,15 +297,7 @@ class Member_Frontend {
 		}
 
 		// Get the allowed actions for unauthorised users.
-		$allowed = apply_filters(
-			'mf_allowed_actions',
-			array(
-				'login',
-				'register',
-				'reset_password',
-				'forgot_password',
-			)
-		);
+		$allowed = apply_filters( 'mf_allowed_actions', array() );
 
 		// Redirect to login if not logged in.
 		if ( ! is_user_logged_in() && ! in_array( $action, $allowed, true ) ) {

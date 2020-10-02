@@ -19,11 +19,28 @@ class Actions {
 	 * Actions constructor.
 	 */
 	public function __construct() {
+		// Set the default allowed actions.
+		add_filter( 'mf_allowed_actions', array( $this, 'default_allowed_actions' ) );
+
 		// Set the default fallback actions.
 		add_filter( 'mf_fallback_action', array( $this, 'fallback_action' ) );
 
 		// Dispatch action handlers.
 		add_action( 'template_redirect', array( $this, 'action_handler' ) );
+	}
+
+	/**
+	 * Return the default allowed actions.
+	 *
+	 * @return array
+	 */
+	public function default_allowed_actions() {
+		return array(
+			'login',
+			'register',
+			'reset_password',
+			'forgot_password',
+		);
 	}
 
 	/**
@@ -91,7 +108,7 @@ class Actions {
 	 * @return ?string
 	 */
 	public function action() {
-		if ( (int) get_option( 'mf_page_for_members' ) !== get_the_ID() ) {
+		if ( ! MF()->is_member_page() ) {
 			return null;
 		}
 
@@ -109,7 +126,7 @@ class Actions {
 	 * Handle an action post.
 	 */
 	public function action_handler() {
-		if ( ! $this->is( 'post' ) && ! isset( $_REQUEST['_mf_call'] ) ) {
+		if ( ! $this->is( 'post' ) ) {
 			return;
 		}
 
@@ -119,19 +136,10 @@ class Actions {
 			return;
 		}
 
-		$data = wp_unslash( $_REQUEST );
-		$user = wp_get_current_user();
+		$data  = wp_unslash( $_REQUEST );
+		$nonce = isset( $data['mf_nonce'] ) ? $data['mf_nonce'] : null;
 
-		if (
-			! isset( $_REQUEST['_mf_call'] )
-			&& (
-				! isset( $data['mf_nonce'] )
-				|| (
-					! wp_verify_nonce( $data['mf_nonce'], 'mf_form_nopriv' )
-					&& ! wp_verify_nonce( $data['mf_nonce'], "mf_form_priv_{$user->ID}" )
-				)
-			)
-		) {
+		if ( ! mf_verify_nonce( $nonce, $action ) ) {
 			wp_die( 'Nonce verification failed' );
 		}
 

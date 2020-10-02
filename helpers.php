@@ -168,3 +168,45 @@ if ( ! function_exists( 'mf_action_to_url' ) ) {
 	}
 
 }
+
+if ( ! function_exists( 'mf_nonce' ) ) {
+
+	/**
+	 * Create a member nonce.
+	 *
+	 * @param string $action     The action name.
+	 * @param bool   $force_priv Whether to force user checks.
+	 */
+	function mf_nonce( $action, $force_priv = false ) {
+		if ( $force_priv || ! in_array( $action, apply_filters( 'mf_allowed_actions', array() ) ) ) {
+			$nonce_action = 'priv_' . get_current_user_id() . '_' . $action;
+		} else {
+			$nonce_action = 'nopriv_' . $action;
+		}
+
+		wp_nonce_field( "{$nonce_action}", 'mf_nonce' );
+	}
+
+}
+
+if ( ! function_exists( 'mf_verify_nonce' ) ) {
+
+	/**
+	 * Verify the member nonce.
+	 *
+	 * @param string $nonce  The nonce.
+	 * @param string $action The action name.
+	 *
+	 * @return bool
+	 */
+	function mf_verify_nonce( $nonce, $action ) {
+		$valid = wp_verify_nonce( $nonce, 'nopriv_' . $action );
+
+		if ( ! $valid && is_user_logged_in() ) {
+			$valid = wp_verify_nonce( $nonce, 'priv_' . get_current_user_id() . '_' . $action );
+		}
+
+		return $valid;
+	}
+
+}
