@@ -11,7 +11,7 @@
 
 ?>
 <form method="post">
-	<?php wp_nonce_field( 'mf_form_nopriv', 'mf_nonce' ); ?>
+	<?php mf_nonce( 'reset-password' ); ?>
 
 	<h2>Reset your password</h2>
 

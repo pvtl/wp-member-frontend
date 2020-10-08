@@ -9,7 +9,7 @@
 
 ?>
 <form method="post">
-	<?php wp_nonce_field( 'mf_form_nopriv', 'mf_nonce' ); ?>
+	<?php mf_nonce( 'forgot-password' ); ?>
 
 	<h2>Reset your password</h2>
 	<p>Please enter your email address. You will receive a link to create a new password via email.</p>

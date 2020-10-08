@@ -9,7 +9,7 @@
 
 ?>
 <form method="post">
-	<?php wp_nonce_field( 'mf_form_nopriv', 'mf_nonce' ); ?>
+	<?php mf_nonce( 'register' ); ?>
 
 	<h2>Register for an account</h2>
 

@@ -13,7 +13,7 @@
 <?php $this->partial( 'nav' ); ?>
 
 <form method="post">
-	<?php wp_nonce_field( "mf_form_priv_{$user->ID}", 'mf_nonce' ); ?>
+	<?php mf_nonce( 'profile' ); ?>
 
 	<h3>Update your profile</h3>
 
