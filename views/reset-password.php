@@ -11,7 +11,7 @@
 
 ?>
 <form method="post">
-	<?php mf_nonce( 'reset-password' ); ?>
+	<?php mf_nonce( 'reset_password' ); ?>
 
 	<h2>Reset your password</h2>
 

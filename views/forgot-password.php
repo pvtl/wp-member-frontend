@@ -9,7 +9,7 @@
 
 ?>
 <form method="post">
-	<?php mf_nonce( 'forgot-password' ); ?>
+	<?php mf_nonce( 'forgot_password' ); ?>
 
 	<h2>Reset your password</h2>
 	<p>Please enter your email address. You will receive a link to create a new password via email.</p>
