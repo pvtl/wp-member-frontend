@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Member Frontend & API by Pivotal
+ * Plugin Name: Member Frontend
  * Plugin URI: https://github.com/pvtl/wp-member-frontend
- * Description: Add a members area to WordPress with unlimited custom views.
+ * Description: Add a members area and functionality to WordPress.
  * Author: Pivotal Agency
  * Author URI: https://pivotal.agency
  * Text Domain: member-frontend
