@@ -8,7 +8,7 @@
  */
 
 if ( $this->has_flash( 'error' ) ) {
-	$error_message = $this->get_flash( 'error' );
+	$error_message = $this->get_flash( 'error', false );
 
 	// Check if the error message is an array of form input
 	// errors. If so, these will be displayed individually with
@@ -20,9 +20,6 @@ if ( $this->has_flash( 'error' ) ) {
 		</div>
 		<?php
 	} else {
-		// Add the error messages back into flash for later use.
-		$this->set_flash( 'error', $error_message );
-
 		?>
 		<div class="alert alert-danger">Validation errors occurred</div>
 		<?php

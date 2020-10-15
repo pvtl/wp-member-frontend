@@ -28,6 +28,13 @@ class Member_Frontend {
 	protected static $instance;
 
 	/**
+	 * The flash cookie values.
+	 *
+	 * @var array
+	 */
+	protected $flash = array();
+
+	/**
 	 * The page for the members template.
 	 *
 	 * @var WP_Post
@@ -59,13 +66,21 @@ class Member_Frontend {
 	 * MemberFrontend constructor.
 	 */
 	public function __construct() {
-		static::start_session();
-
 		$this->admin        = new Admin();
 		$this->actions      = new Actions();
 		$this->role_manager = new Role_Manager();
 
 		$this->init();
+
+		foreach ( array_keys( $_COOKIE ) as $cookie ) {
+			if ( strpos( $cookie, 'mf_flash_' ) !== false ) {
+				$this->flash[ $cookie ] = $_COOKIE[ $cookie ];
+
+				unset( $_COOKIE[ $cookie ] );
+
+				setcookie( $cookie, '', time() - 36000, '/', '', is_ssl(), true );
+			}
+		}
 
 		do_action( 'mf_loaded' );
 	}
@@ -83,14 +98,6 @@ class Member_Frontend {
 		}
 
 		return self::$instance;
-	}
-
-	/**
-	 * Start secure session for flashing data.
-	 */
-	protected static function start_session() {
-		session_set_cookie_params( 3600, '/', '', is_ssl(), true );
-		session_start();
 	}
 
 	/**
@@ -263,7 +270,7 @@ class Member_Frontend {
 			$login = isset( $_GET['login'] ) ? wp_unslash( $_GET['login'] ) : null; // phpcs:ignore
 
 			// If the query parameters aren't set, attempt to get
-			// them from the session data.
+			// them from the cookie data.
 			if ( ! $key && ! $login ) {
 				$key   = $this->old( 'key' );
 				$login = $this->old( 'login' );
@@ -322,7 +329,7 @@ class Member_Frontend {
 			$login = isset( $_GET['login'] ) ? wp_unslash( $_GET['login'] ) : null; // phpcs:ignore
 
 			// If the query parameters aren't set, attempt to get
-			// them from the session data.
+			// them from the cookie data.
 			if ( ! $key && ! $login ) {
 				$key   = $this->old( 'key' );
 				$login = $this->old( 'login' );
@@ -552,7 +559,7 @@ class Member_Frontend {
 			$this->set_flash( 'input', $with_input );
 		}
 
-		wp_safe_redirect( $_SERVER['HTTP_REFERER'] );
+		wp_safe_redirect( esc_url( $_SERVER['HTTP_REFERER'] ) );
 		die();
 	}
 
@@ -634,7 +641,7 @@ class Member_Frontend {
 		$errors = apply_filters( 'mf_validate_user', array(), $user_data, $data );
 
 		if ( count( $errors ) ) {
-			return new \WP_Error( 'invalid_data', $errors );
+			return new WP_Error( 'invalid_data', $errors );
 		}
 
 		// Create the user.
@@ -887,11 +894,7 @@ class Member_Frontend {
 	 * @param mixed  $data The flash data.
 	 */
 	public function set_flash( $name, $data ) {
-		if ( ! isset( $_SESSION['flash'] ) ) {
-			$_SESSION['flash'] = array();
-		}
-
-		$_SESSION['flash'][ $name ] = maybe_serialize( $data );
+		setcookie( "mf_flash_{$name}", maybe_serialize( $data ), time() + MINUTE_IN_SECONDS * 30, '/', '', is_ssl(), true );
 	}
 
 	/**
@@ -902,21 +905,24 @@ class Member_Frontend {
 	 * @return bool
 	 */
 	public function has_flash( $name ) {
-		return isset( $_SESSION['flash'][ $name ] );
+		return isset( $this->flash[ "mf_flash_{$name}" ] );
 	}
 
 	/**
 	 * Retrieve flash data.
 	 *
-	 * @param string $name The flash key.
+	 * @param string $name  The flash key.
+	 * @param bool   $clear Whether to clear the flash value on read.
 	 *
 	 * @return mixed
 	 */
-	public function get_flash( $name ) {
-		$data = isset( $_SESSION['flash'][ $name ] ) ? $_SESSION['flash'][ $name ] : false;
+	public function get_flash( $name, $clear = true ) {
+		$data = $this->has_flash( $name ) ? $this->flash[ "mf_flash_{$name}" ] : false;
 
 		if ( $data ) {
-			unset( $_SESSION['flash'][ $name ] );
+			if ( $clear ) {
+				$this->forget_flash( $name );
+			}
 
 			return maybe_unserialize( $data );
 		}
@@ -930,7 +936,7 @@ class Member_Frontend {
 	 * @param string $name The flash key.
 	 */
 	public function forget_flash( $name ) {
-		unset( $_SESSION['flash'][ $name ] );
+		unset( $this->flash[ "mf_flash_{$name}" ] );
 	}
 
 	/**
@@ -945,8 +951,7 @@ class Member_Frontend {
 		static $data_dot = array();
 
 		if ( empty( $data ) ) {
-			$data     = isset( $_SESSION['flash']['input'] ) ? $_SESSION['flash']['input'] : array();
-			$data     = maybe_unserialize( $data );
+			$data     = $this->get_flash( 'input', false );
 			$data_dot = static::dot( $data );
 		}
 
@@ -971,8 +976,7 @@ class Member_Frontend {
 		static $errors_dot = array();
 
 		if ( empty( $errors ) ) {
-			$errors     = isset( $_SESSION['flash']['error'] ) ? $_SESSION['flash']['error'] : array();
-			$errors     = maybe_unserialize( $errors );
+			$errors     = $this->get_flash( 'error', false );
 			$errors_dot = static::dot( $errors );
 		}
 
@@ -1011,11 +1015,13 @@ class Member_Frontend {
 	public static function dot( $array, $prepend = '' ) {
 		$results = array();
 
-		foreach ( $array as $key => $value ) {
-			if ( is_array( $value ) && ! empty( $value ) ) {
-				$results = array_merge( $results, static::dot( $value, $prepend . $key . '.' ) );
-			} else {
-				$results[ $prepend . $key ] = $value;
+		if ( is_array( $array ) ) {
+			foreach ( $array as $key => $value ) {
+				if ( is_array( $value ) && ! empty( $value ) ) {
+					$results = array_merge( $results, static::dot( $value, $prepend . $key . '.' ) );
+				} else {
+					$results[ $prepend . $key ] = $value;
+				}
 			}
 		}
 
@@ -1029,6 +1035,7 @@ class Member_Frontend {
 	 * @return bool
 	 */
 	public static function accepts_json() {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		return isset( $_SERVER['HTTP_ACCEPT'] ) && strpos( $_SERVER['HTTP_ACCEPT'], 'application/json' ) !== false;
 	}
 
