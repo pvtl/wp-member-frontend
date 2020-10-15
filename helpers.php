@@ -6,7 +6,6 @@
  */
 
 if ( ! function_exists( 'mf_select_options' ) ) {
-
 	/**
 	 * Fill <select> element with options with
 	 * automatic selection.
@@ -38,11 +37,9 @@ if ( ! function_exists( 'mf_select_options' ) ) {
 			);
 		}
 	}
-
 }
 
 if ( ! function_exists( 'mf_current_member_has_role' ) ) {
-
 	/**
 	 * Check if the logged in member has a role.
 	 *
@@ -61,13 +58,11 @@ if ( ! function_exists( 'mf_current_member_has_role' ) ) {
 			$user = MF()->get_current_user();
 		}
 
-		return member_has_role( $user, ...$roles );
+		return mf_member_has_role( $user, ...$roles );
 	}
-
 }
 
 if ( ! function_exists( 'mf_member_has_role' ) ) {
-
 	/**
 	 * Check if the logged in member has a role.
 	 *
@@ -93,11 +88,9 @@ if ( ! function_exists( 'mf_member_has_role' ) ) {
 
 		return $has_role;
 	}
-
 }
 
 if ( ! function_exists( 'mf_get_current_member_role' ) ) {
-
 	/**
 	 * Return the logged in member's role.
 	 *
@@ -112,11 +105,9 @@ if ( ! function_exists( 'mf_get_current_member_role' ) ) {
 
 		return $user ? mf_get_member_role( $user ) : null;
 	}
-
 }
 
 if ( ! function_exists( 'mf_get_member_role' ) ) {
-
 	/**
 	 * Return the logged in member's role.
 	 *
@@ -136,7 +127,6 @@ if ( ! function_exists( 'mf_get_member_role' ) ) {
 
 		return array_shift( $role );
 	}
-
 }
 
 if ( ! function_exists( 'mf_url_to_action' ) ) {
@@ -155,7 +145,6 @@ if ( ! function_exists( 'mf_url_to_action' ) ) {
 }
 
 if ( ! function_exists( 'mf_action_to_url' ) ) {
-
 	/**
 	 * Convert an action name to a URL path.
 	 *
@@ -166,11 +155,9 @@ if ( ! function_exists( 'mf_action_to_url' ) ) {
 	function mf_action_to_url( $action ) {
 		return str_replace( '_', '-', $action );
 	}
-
 }
 
 if ( ! function_exists( 'mf_nonce' ) ) {
-
 	/**
 	 * Create a member nonce.
 	 *
@@ -178,7 +165,7 @@ if ( ! function_exists( 'mf_nonce' ) ) {
 	 * @param bool   $force_priv Whether to force user checks.
 	 */
 	function mf_nonce( $action, $force_priv = false ) {
-		if ( $force_priv || ! in_array( $action, apply_filters( 'mf_allowed_actions', array() ) ) ) {
+		if ( $force_priv || ! in_array( $action, apply_filters( 'mf_allowed_actions', array() ), true ) ) {
 			$nonce_action = 'priv_' . get_current_user_id() . '_' . $action;
 		} else {
 			$nonce_action = 'nopriv_' . $action;
@@ -186,11 +173,9 @@ if ( ! function_exists( 'mf_nonce' ) ) {
 
 		wp_nonce_field( "{$nonce_action}", 'mf_nonce' );
 	}
-
 }
 
 if ( ! function_exists( 'mf_verify_nonce' ) ) {
-
 	/**
 	 * Verify the member nonce.
 	 *
@@ -208,5 +193,4 @@ if ( ! function_exists( 'mf_verify_nonce' ) ) {
 
 		return $valid;
 	}
-
 }
