@@ -130,7 +130,6 @@ if ( ! function_exists( 'mf_get_member_role' ) ) {
 }
 
 if ( ! function_exists( 'mf_url_to_action' ) ) {
-
 	/**
 	 * Convert a URL path to an action.
 	 *
@@ -139,9 +138,12 @@ if ( ! function_exists( 'mf_url_to_action' ) ) {
 	 * @return string
 	 */
 	function mf_url_to_action( $url ) {
+		if ( ! $url ) {
+			return null;
+		}
+
 		return str_replace( '-', '_', $url );
 	}
-
 }
 
 if ( ! function_exists( 'mf_action_to_url' ) ) {
