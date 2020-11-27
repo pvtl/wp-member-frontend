@@ -81,8 +81,6 @@ class Member_Frontend {
 				setcookie( $cookie, '', time() - 36000, '/', '', is_ssl(), true );
 			}
 		}
-
-		do_action( 'mf_loaded' );
 	}
 
 	/**
@@ -104,6 +102,8 @@ class Member_Frontend {
 	 * Hook into WP actions and adds plugin shortcodes.
 	 */
 	protected function init() {
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+
 		// Catch failed login attempts.
 		add_action( 'wp_authenticate', array( $this, 'catch_empty_login' ), 1, 2 );
 		add_action( 'wp_login_failed', array( $this, 'intercept_failed_login' ) );
@@ -1058,5 +1058,12 @@ class Member_Frontend {
 	 */
 	public function is_member_page() {
 		return ! is_admin() && $this->member_page && get_the_ID() === $this->member_page->ID;
+	}
+
+	/**
+	 * Enqueue plugin assets.
+	 */
+	public function enqueue_assets() {
+		wp_enqueue_script( 'mf', plugin_dir_url( MF_PATH . '/member-frontend.php' ) . 'assets/dist/js/app.js', array( 'jquery' ), '1.0.0', true );
 	}
 }

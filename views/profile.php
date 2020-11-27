@@ -5,6 +5,7 @@
  * @package Member_Frontend
  *
  * @var \App\Plugins\Pvtl\Classes\Member_Frontend $this
+ * @var \WP_User $user
  */
 
 ?>
@@ -12,60 +13,27 @@
 
 <?php $this->partial( 'nav' ); ?>
 
-<form method="post">
+<form method="post" data-form-hook="profile">
 	<?php mf_nonce( 'profile' ); ?>
 
-	<h3>Update your profile</h3>
+	<h3>Update Your Profile</h3>
 
 	<?php $this->partial( 'notices' ); ?>
 
 	<fieldset>
 		<div class="form-group">
-			<?php $error_message = $this->get_error( 'first_name' ); ?>
 			<label for="first_name">First Name</label>
-			<input
-				id="first_name"
-				name="first_name"
-				type="text"
-				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
-				value="<?php echo esc_html( $user->user_firstname ); ?>"
-				autocomplete="given-name"
-			>
-			<?php if ( $error_message ) { ?>
-				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
-			<?php } ?>
+			<input id="first_name" name="first_name" type="text" class="form-control" value="<?php echo esc_html( $user->user_firstname ); ?>" autocomplete="given-name">
 		</div>
 
 		<div class="form-group">
-			<?php $error_message = $this->get_error( 'last_name' ); ?>
 			<label for="last_name">Last Name</label>
-			<input
-				id="last_name"
-				name="last_name"
-				type="text"
-				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
-				value="<?php echo esc_html( $user->user_lastname ); ?>"
-				autocomplete="family-name"
-			>
-			<?php if ( $error_message ) { ?>
-				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
-			<?php } ?>
+			<input id="last_name" name="last_name" type="text" class="form-control" value="<?php echo esc_html( $user->user_lastname ); ?>" autocomplete="family-name">
 		</div>
 
 		<div class="form-group">
-			<?php $error_message = $this->get_error( 'email' ); ?>
 			<label for="email">Email</label>
-			<input
-				id="email"
-				name="email"
-				type="email"
-				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
-				value="<?php echo esc_html( $user->user_email ); ?>"
-				autocomplete="email"
-			>
-			<?php if ( $error_message ) { ?>
-				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
-			<?php } ?>
+			<input id="email" name="email" type="email" class="form-control" value="<?php echo esc_html( $user->user_email ); ?>" autocomplete="email">
 		</div>
 	</fieldset>
 
@@ -74,33 +42,17 @@
 
 	<fieldset>
 		<div class="form-group">
-			<?php $error_message = $this->get_error( 'password' ); ?>
 			<label for="password">New password</label>
-			<input
-				id="password"
-				name="password"
-				type="password"
-				class="form-control<?php echo $error_message ? ' is-invalid' : ''; ?>"
-				autocomplete="new-password"
-			>
-			<?php if ( $error_message ) { ?>
-				<small class="invalid-feedback"><?php echo esc_html( $error_message ); ?></small>
-			<?php } ?>
+			<input id="password" name="password" type="password" class="form-control" autocomplete="new-password">
 		</div>
 
 		<div class="form-group">
 			<label for="confirm_password">Confirm password</label>
-			<input
-				id="confirm_password"
-				name="confirm_password"
-				type="password"
-				class="form-control"
-				autocomplete="new-password"
-			>
+			<input id="confirm_password" name="confirm_password" type="password" class="form-control" autocomplete="new-password">
 		</div>
 	</fieldset>
 
 	<div>
-		<button type="submit" class="btn btn-primary">Update profile</button>
+		<button type="submit" class="btn btn-primary">Update Profile</button>
 	</div>
 </form>
