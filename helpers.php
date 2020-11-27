@@ -196,3 +196,27 @@ if ( ! function_exists( 'mf_verify_nonce' ) ) {
 		return $valid;
 	}
 }
+
+if ( ! function_exists( 'mf_action' ) ) {
+	/**
+	 * Get the current member action.
+	 *
+	 * @return string
+	 */
+	function mf_action() {
+		return MF()->actions->action();
+	}
+}
+
+if ( ! function_exists( 'mf_is_action' ) ) {
+	/**
+	 * Check if an action is the current action.
+	 *
+	 * @param string $action The action to check.
+	 *
+	 * @return string
+	 */
+	function mf_is_action( $action ) {
+		return mf_action() === $action;
+	}
+}
