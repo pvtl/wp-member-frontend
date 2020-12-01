@@ -136,6 +136,14 @@ class Actions {
 			return;
 		}
 
+		if (
+			empty( $_REQUEST )
+			&& isset( $_SERVER['CONTENT_TYPE'] )
+			&& 'application/json' === $_SERVER['CONTENT_TYPE']
+		) {
+			$_REQUEST = json_decode( file_get_contents( 'php://input' ), true );
+		}
+
 		$data  = wp_unslash( $_REQUEST );
 		$nonce = isset( $data['mf_nonce'] ) ? $data['mf_nonce'] : null;
 
