@@ -159,6 +159,42 @@ if ( ! function_exists( 'mf_action_to_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'mf_nonce_action' ) ) {
+	/**
+	 * Create a member nonce action.
+	 *
+	 * @param string $action     The action name.
+	 * @param bool   $force_priv Whether to force user checks.
+	 *
+	 * @return string
+	 */
+	function mf_nonce_action( $action, $force_priv = false ) {
+		if ( $force_priv || ! in_array( $action, apply_filters( 'mf_allowed_actions', array() ), true ) ) {
+			$nonce_action = 'priv_' . get_current_user_id() . '_' . $action;
+		} else {
+			$nonce_action = 'nopriv_' . $action;
+		}
+
+		return $nonce_action;
+	}
+}
+
+if ( ! function_exists( 'mf_create_nonce' ) ) {
+	/**
+	 * Create a member nonce value.
+	 *
+	 * @param string $action     The action name.
+	 * @param bool   $force_priv Whether to force user checks.
+	 *
+	 * @return string
+	 */
+	function mf_create_nonce( $action, $force_priv = false ) {
+		$nonce_action = mf_nonce_action( $action, $force_priv );
+
+		return wp_create_nonce( $nonce_action );
+	}
+}
+
 if ( ! function_exists( 'mf_nonce' ) ) {
 	/**
 	 * Create a member nonce.
@@ -167,13 +203,9 @@ if ( ! function_exists( 'mf_nonce' ) ) {
 	 * @param bool   $force_priv Whether to force user checks.
 	 */
 	function mf_nonce( $action, $force_priv = false ) {
-		if ( $force_priv || ! in_array( $action, apply_filters( 'mf_allowed_actions', array() ), true ) ) {
-			$nonce_action = 'priv_' . get_current_user_id() . '_' . $action;
-		} else {
-			$nonce_action = 'nopriv_' . $action;
-		}
+		$nonce_action = mf_nonce_action( $action, $force_priv );
 
-		wp_nonce_field( "{$nonce_action}", 'mf_nonce' );
+		wp_nonce_field( $nonce_action, 'mf_nonce' );
 	}
 }
 
@@ -218,5 +250,31 @@ if ( ! function_exists( 'mf_is_action' ) ) {
 	 */
 	function mf_is_action( $action ) {
 		return mf_action() === $action;
+	}
+}
+
+if ( ! function_exists( 'mf_partial' ) ) {
+	/**
+	 * Renders a view partial.
+	 *
+	 * @param string $name Path to the partial.
+	 * @param array  $vars Extra partial key value data.
+	 */
+	function mf_partial( $name, $vars = array() ) {
+		MF()->partial( $name, $vars );
+	}
+}
+
+if ( ! function_exists( 'mf_url' ) ) {
+	/**
+	 * Return the URL for an action.
+	 *
+	 * @param ?string $action The action for the URL.
+	 * @param array   $params Optional query parameters.
+	 *
+	 * @return string
+	 */
+	function mf_url( $action = null, $params = array() ) {
+		return MF()->url( $action, $params );
 	}
 }
