@@ -24,6 +24,8 @@ const submitMemberForm = async (e) => {
 
   submissions[hook] = true;
 
+  form.trigger('mf:submit');
+
   const body = new FormData(form[0]);
   const action = form.attr('action') || window.location.pathname;
   const method = form.attr('method') || 'GET';
@@ -37,6 +39,8 @@ const submitMemberForm = async (e) => {
   try {
     const response = await fetch(action, { method, body, headers });
     const json = await response.json();
+
+    form.trigger('mf:response', { json });
 
     const { errors = {}, redirect = '' } = json;
 
