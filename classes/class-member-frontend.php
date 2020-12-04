@@ -70,6 +70,8 @@ class Member_Frontend {
 		$this->actions      = new Actions();
 		$this->role_manager = new Role_Manager();
 
+		Router::instance();
+
 		$this->init();
 
 		foreach ( array_keys( $_COOKIE ) as $cookie ) {
@@ -112,33 +114,18 @@ class Member_Frontend {
 		add_action( 'after_setup_theme', array( $this, 'remove_admin_bar' ) );
 
 		// Set up the members page.
-		add_action( 'init', array( $this, 'setup_members_page' ) );
-		add_action( 'init', array( $this, 'rewrites' ) );
+		add_action( 'init', array( $this, 'setup_members_page' ), 5 );
 		add_action( 'template_redirect', array( $this, 'render' ), 10 );
 		add_action( 'mf_before_render', array( $this, 'before_render' ), 10, 1 );
 		add_action( 'parse_request', array( $this, 'parse_request_overrides' ) );
 		add_filter( 'mf_render_vars', array( $this, 'render_vars' ), 10, 2 );
 		add_filter( 'body_class', array( $this, 'body_class' ), 10, 2 );
-		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
 
 		// Default handlers.
 		add_action( 'mf_action_profile', array( $this, 'handle_profile' ), 10, 1 );
 		add_action( 'mf_action_register', array( $this, 'handle_register' ), 10, 1 );
 		add_action( 'mf_action_reset_password', array( $this, 'handle_reset_password' ), 10, 1 );
 		add_action( 'mf_action_forgot_password', array( $this, 'handle_forgot_password' ), 10, 1 );
-	}
-
-	/**
-	 * Add custom query vars to request.
-	 *
-	 * @param array $query_vars The existing query vars.
-	 *
-	 * @return array
-	 */
-	public function add_query_vars( $query_vars ) {
-		$query_vars[] = 'mf_action';
-
-		return $query_vars;
 	}
 
 	/**
@@ -167,49 +154,6 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Add custom rewrite rules.
-	 */
-	public function rewrites() {
-		if ( ! $this->member_page || get_the_ID() ) {
-			return;
-		}
-
-		$path = get_page_uri( $this->member_page );
-
-		// Match first level paths.
-		add_rewrite_rule(
-			"^{$path}\/([a-z0-9\-]+)?$",
-			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]',
-			'top'
-		);
-
-		// Match first level paths.
-		add_rewrite_rule(
-			"^{$path}\/([a-z0-9\-]+)(?:\/page\/([0-9]+))$",
-			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]&paged=$matches[2]',
-			'top'
-		);
-
-		// Match second level paths.
-		add_rewrite_rule(
-			"^{$path}\/([a-z0-9\-]+)(?:\/([a-z0-9\-]+))$",
-			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]/$matches[2]',
-			'top'
-		);
-
-		// Match second level paths.
-		add_rewrite_rule(
-			"^{$path}\/([a-z0-9\-]+)(?:\/([a-z0-9\-]+))(?:\/page\/([0-9]+))$",
-			'index.php?page_id=' . $this->member_page->ID . '&mf_action=$matches[1]/$matches[2]&paged=$matches[3]',
-			'top'
-		);
-
-		add_rewrite_tag( '%mf_action%', '([^&]+)' );
-
-		do_action( 'mf_after_rewrites' );
-	}
-
-	/**
 	 * Return the URL for an action.
 	 *
 	 * @param ?string $action The action for the URL.
@@ -227,7 +171,17 @@ class Member_Frontend {
 		$url = esc_url( $url );
 
 		if ( ! empty( $params ) ) {
-			$url .= '?' . http_build_query( $params );
+			foreach ( $params as $key => $value ) {
+				if ( ':' === $key[0] ) {
+					unset( $params[ $key ] );
+
+					$url = str_replace( $key, $value, $url );
+				}
+			}
+
+			if ( ! empty( $params ) ) {
+				$url .= '?' . http_build_query( $params );
+			}
 		}
 
 		return $url;
@@ -415,6 +369,8 @@ class Member_Frontend {
 	 * @return string
 	 */
 	public function view( $name, $vars = array() ) {
+		$name = preg_replace( '(/:[\w]+)', '', $name );
+
 		$file_paths = array(
 			$name,
 			$name . '/index',
