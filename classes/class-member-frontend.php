@@ -894,6 +894,8 @@ class Member_Frontend {
 	 * @param mixed  $data The flash data.
 	 */
 	public function set_flash( $name, $data ) {
+		$this->flash[ "mf_flash_{$name}" ] = maybe_serialize( $data );
+
 		setcookie( "mf_flash_{$name}", maybe_serialize( $data ), time() + MINUTE_IN_SECONDS * 30, '/', '', is_ssl(), true );
 	}
 
