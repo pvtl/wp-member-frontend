@@ -278,3 +278,16 @@ if ( ! function_exists( 'mf_url' ) ) {
 		return MF()->url( $action, $params );
 	}
 }
+
+if ( ! function_exists( 'mf_old' ) ) {
+	/**
+	 * Retrieve old post data.
+	 *
+	 * @param string $name The post data key.
+	 *
+	 * @return mixed
+	 */
+	function mf_old( $name ) {
+		return MF()->old( $name );
+	}
+}
