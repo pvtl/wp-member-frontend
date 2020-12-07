@@ -1,6 +1,6 @@
 <?php
 /**
- * Member Frontend Router.
+ * Member Frontend Rewrites.
  *
  * @package Member_Frontend
  */
@@ -10,11 +10,11 @@ namespace App\Plugins\Pvtl\Classes;
 defined( 'ABSPATH' ) || die;
 
 /**
- * Class Router
+ * Class Rewrites
  *
  * @package App\Plugins\Pvtl
  */
-class Router {
+class Rewrites {
 	/**
 	 * Construct.
 	 */
@@ -24,9 +24,7 @@ class Router {
 	}
 
 	/**
-	 * Main WooCommerce Instance.
-	 *
-	 * Ensures only one instance of WooCommerce is loaded or can be loaded.
+	 * Rewrites instance.
 	 *
 	 * @return static
 	 */
@@ -41,9 +39,9 @@ class Router {
 	}
 
 	/**
-	 * Add custom query vars to request.
+	 * Add custom query vars to the request.
 	 *
-	 * @param array $query_vars The existing query vars.
+	 * @param array $query_vars The query vars.
 	 *
 	 * @return array
 	 */
@@ -55,13 +53,19 @@ class Router {
 	}
 
 	/**
-	 * Add custom rewrite rules.
+	 * Add custom rewrite rules for member actions.
 	 */
 	public function rewrites() {
-		$post_id   = MF()->member_page->ID;
-		$post_path = get_page_uri( MF()->member_page );
+		$member_page = MF()->get_members_page();
 
-		$available_actions = apply_filters( 'mf_actions', array() );
+		if ( ! $member_page ) {
+			return;
+		}
+
+		$post_id   = $member_page->ID;
+		$post_path = get_page_uri( $member_page );
+
+		$available_actions = apply_filters( 'mf_rewrite_actions', array() );
 
 		if ( empty( $available_actions ) ) {
 			return;
@@ -70,7 +74,11 @@ class Router {
 		$rules = array();
 
 		foreach ( $available_actions as $action ) {
+			// Create custom rewrite patterns for actions that contain
+			// URL parameters. e.g. /components/:id/. Currently only one
+			// URL parameter is handled, which is available in the mf_id query arg.
 			if ( preg_match( '(:[\w]+)', $action ) ) {
+				// Escape forward slashes and replace ":id" with a pattern.
 				$regex_action = preg_replace( array( '([/])', '(:[\w]+)' ), array( '\/', '([\w]+?)' ), $action );
 
 				$rules[] = array(
@@ -80,6 +88,10 @@ class Router {
 			}
 		}
 
+		// Create a generic rewrite rule for actions that DO NOT
+		// contain URL parameters. This will match the full URL
+		// minus pagination (e.g. /page/2/) to the mf_action
+		// query arg. It'll also add the correct pagination query arg.
 		$rules[] = array(
 			'regex' => "^{$post_path}\/([/\w]+?(?=\/page)?)(?:\/page\/([0-9]+))?$",
 			'query' => 'index.php?page_id=' . $post_id . '&mf_action=$matches[1]&paged=$matches[2]',

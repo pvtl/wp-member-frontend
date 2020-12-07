@@ -19,6 +19,10 @@ class Actions {
 	 * Actions constructor.
 	 */
 	public function __construct() {
+		// Set the default actions.
+		add_filter( 'mf_actions', array( $this, 'default_actions' ), 5 );
+		add_filter( 'mf_rewrite_actions', array( $this, 'default_actions' ), 5 );
+
 		// Set the default allowed actions.
 		add_filter( 'mf_allowed_actions', array( $this, 'default_allowed_actions' ) );
 
@@ -48,7 +52,7 @@ class Actions {
 	 *
 	 * @return array
 	 */
-	protected function default_actions() {
+	public function default_actions() {
 		return array(
 			'login',
 			'profile',
@@ -93,7 +97,7 @@ class Actions {
 			$action = is_user_logged_in() ? 'dashboard' : 'login';
 		}
 
-		$available_actions = apply_filters( 'mf_actions', $this->default_actions() );
+		$available_actions = apply_filters( 'mf_actions', array() );
 
 		if ( ! in_array( $action, $available_actions, true ) ) {
 			return null;

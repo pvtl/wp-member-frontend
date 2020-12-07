@@ -59,11 +59,11 @@ class Member_Frontend {
 	 * MemberFrontend constructor.
 	 */
 	public function __construct() {
+		Rewrites::instance();
+
 		$this->admin        = new Admin();
 		$this->actions      = new Actions();
 		$this->role_manager = new Role_Manager();
-
-		Router::instance();
 
 		$this->init();
 
