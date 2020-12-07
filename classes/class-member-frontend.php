@@ -35,13 +35,6 @@ class Member_Frontend {
 	protected $flash = array();
 
 	/**
-	 * The page for the members template.
-	 *
-	 * @var WP_Post
-	 */
-	public $member_page;
-
-	/**
 	 * The admin manager.
 	 *
 	 * @var Admin
@@ -86,9 +79,9 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Main WooCommerce Instance.
+	 * Main Member_Frontend Instance.
 	 *
-	 * Ensures only one instance of WooCommerce is loaded or can be loaded.
+	 * Ensures only one instance of Member_Frontend is loaded.
 	 *
 	 * @return Member_Frontend
 	 */
@@ -114,7 +107,6 @@ class Member_Frontend {
 		add_action( 'after_setup_theme', array( $this, 'remove_admin_bar' ) );
 
 		// Set up the members page.
-		add_action( 'init', array( $this, 'setup_members_page' ), 5 );
 		add_action( 'template_redirect', array( $this, 'render' ), 10 );
 		add_action( 'mf_before_render', array( $this, 'before_render' ), 10, 1 );
 		add_action( 'parse_request', array( $this, 'parse_request_overrides' ) );
@@ -126,6 +118,21 @@ class Member_Frontend {
 		add_action( 'mf_action_register', array( $this, 'handle_register' ), 10, 1 );
 		add_action( 'mf_action_reset_password', array( $this, 'handle_reset_password' ), 10, 1 );
 		add_action( 'mf_action_forgot_password', array( $this, 'handle_forgot_password' ), 10, 1 );
+	}
+
+	/**
+	 * Backwards compatible method to get $member_page.
+	 *
+	 * @param string $property The property to get.
+	 *
+	 * @return mixed
+	 */
+	public function __get( $property ) {
+		if ( 'member_page' !== $property ) {
+			return null;
+		}
+
+		return $this->get_members_page();
 	}
 
 	/**
@@ -162,7 +169,7 @@ class Member_Frontend {
 	 * @return string
 	 */
 	public function url( $action = null, $params = array() ) {
-		$url = get_permalink( $this->member_page );
+		$url = get_permalink( $this->get_members_page() );
 
 		if ( $action ) {
 			$url .= mf_action_to_url( $action ) . '/';
@@ -188,24 +195,18 @@ class Member_Frontend {
 	}
 
 	/**
-	 * Setup the member page WP_Post.
+	 * Get and return the member page.
+	 *
+	 * @return \WP_Post
 	 */
-	public function setup_members_page() {
-		$_post = wp_cache_get( 'mf_members_page', 'posts' );
+	public function get_members_page() {
+		static $member_page = null;
 
-		if ( ! $_post ) {
-			$_post = (int) get_option( 'mf_page_for_members' );
-
-			if ( ! $_post ) {
-				return;
-			}
-
-			wp_cache_add( 'mf_members_page', $_post, 'posts' );
+		if ( is_null( $member_page ) ) {
+			$member_page = get_post( (int) get_option( 'mf_page_for_members' ) );
 		}
 
-		if ( $_post ) {
-			$this->member_page = get_post( $_post );
-		}
+		return $member_page;
 	}
 
 	/**
@@ -583,7 +584,7 @@ class Member_Frontend {
 			$user_data['user_login'] = $user_name;
 
 			while ( username_exists( $user_data['user_login'] ) ) {
-				$user_data['user_login'] = $user_name . '-' . ( ++$duplicate );
+				$user_data['user_login'] = $user_name . '-' . ( ++ $duplicate );
 			}
 		}
 
@@ -850,7 +851,7 @@ class Member_Frontend {
 	 * @param mixed  $data The flash data.
 	 */
 	public function set_flash( $name, $data ) {
-		$this->flash[ "mf_flash_{$name}" ] = maybe_serialize( $data );
+		$this->flash["mf_flash_{$name}"] = maybe_serialize( $data );
 
 		setcookie( "mf_flash_{$name}", maybe_serialize( $data ), time() + MINUTE_IN_SECONDS * 30, '/', '', is_ssl(), true );
 	}
@@ -863,7 +864,7 @@ class Member_Frontend {
 	 * @return bool
 	 */
 	public function has_flash( $name ) {
-		return isset( $this->flash[ "mf_flash_{$name}" ] );
+		return isset( $this->flash["mf_flash_{$name}"] );
 	}
 
 	/**
@@ -875,7 +876,7 @@ class Member_Frontend {
 	 * @return mixed
 	 */
 	public function get_flash( $name, $clear = true ) {
-		$data = $this->has_flash( $name ) ? $this->flash[ "mf_flash_{$name}" ] : false;
+		$data = $this->has_flash( $name ) ? $this->flash["mf_flash_{$name}"] : false;
 
 		if ( $data ) {
 			if ( $clear ) {
@@ -894,7 +895,7 @@ class Member_Frontend {
 	 * @param string $name The flash key.
 	 */
 	public function forget_flash( $name ) {
-		unset( $this->flash[ "mf_flash_{$name}" ] );
+		unset( $this->flash["mf_flash_{$name}"] );
 	}
 
 	/**
@@ -1015,7 +1016,7 @@ class Member_Frontend {
 	 * @return bool
 	 */
 	public function is_member_page() {
-		return ! is_admin() && $this->member_page && get_the_ID() === $this->member_page->ID;
+		return ! is_admin() && $this->get_members_page() && get_the_ID() === $this->get_members_page()->ID;
 	}
 
 	/**
