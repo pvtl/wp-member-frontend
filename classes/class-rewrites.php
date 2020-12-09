@@ -67,24 +67,22 @@ class Rewrites {
 
 		$available_actions = apply_filters( 'mf_rewrite_actions', array() );
 
-		if ( empty( $available_actions ) ) {
-			return;
-		}
-
 		$rules = array();
 
-		foreach ( $available_actions as $action ) {
-			// Create custom rewrite patterns for actions that contain
-			// URL parameters. e.g. /components/:id/. Currently only one
-			// URL parameter is handled, which is available in the mf_id query arg.
-			if ( preg_match( '(:[\w]+)', $action ) ) {
-				// Escape forward slashes and replace ":id" with a pattern.
-				$regex_action = preg_replace( array( '([/])', '(:[\w]+)' ), array( '\/', '([\w]+?)' ), $action );
+		if ( ! empty( $available_actions ) ) {
+			foreach ( $available_actions as $action ) {
+				// Create custom rewrite patterns for actions that contain
+				// URL parameters. e.g. /components/:id/. Currently only one
+				// URL parameter is handled, which is available in the mf_id query arg.
+				if ( preg_match( '(:[\w]+)', $action ) ) {
+					// Escape forward slashes and replace ":id" with a pattern.
+					$regex_action = preg_replace( array( '([/])', '(:[\w]+)' ), array( '\/', '([\w]+?)' ), $action );
 
-				$rules[] = array(
-					'regex'  => "^{$post_path}\/{$regex_action}?$",
-					'query'  => 'index.php?page_id=' . $post_id . '&mf_action=' . $action . '&mf_id=$matches[1]',
-				);
+					$rules[] = array(
+						'regex' => "^{$post_path}\/{$regex_action}?$",
+						'query' => 'index.php?page_id=' . $post_id . '&mf_action=' . $action . '&mf_id=$matches[1]',
+					);
+				}
 			}
 		}
 
