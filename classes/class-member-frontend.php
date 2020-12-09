@@ -460,8 +460,12 @@ class Member_Frontend {
 	 * it goes back to a front-end view.
 	 */
 	public function intercept_failed_login() {
+		if ( ! isset( $_SERVER['HTTP_REFERER'] ) || strpos( $_SERVER['HTTP_REFERER'], mf_url() ) !== 0 ) {
+			return;
+		}
+
 		$this->set_flash( 'error', 'The email and/or password is incorrect. Please try again.' );
-		$this->redirect( 'login' );
+		$this->back();
 	}
 
 	/**
