@@ -1006,7 +1006,11 @@ class Member_Frontend {
 	 */
 	public static function json( $data, $status_code = 200 ) {
 		status_header( $status_code );
-		echo wp_json_encode( $data );
+
+		if ( 204 !== $status_code ) {
+			echo wp_json_encode( $data );
+		}
+
 		die();
 	}
 
