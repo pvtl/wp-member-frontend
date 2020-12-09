@@ -71,12 +71,14 @@ class Rewrites {
 
 		if ( ! empty( $available_actions ) ) {
 			foreach ( $available_actions as $action ) {
+				$action = mf_action_to_url( $action );
+
 				// Create custom rewrite patterns for actions that contain
 				// URL parameters. e.g. /components/:id/. Currently only one
 				// URL parameter is handled, which is available in the mf_id query arg.
-				if ( preg_match( '(:[\w]+)', $action ) ) {
+				if ( preg_match( '(:[\w-]+)', $action ) ) {
 					// Escape forward slashes and replace ":id" with a pattern.
-					$regex_action = preg_replace( array( '([/])', '(:[\w]+)' ), array( '\/', '([\w]+?)' ), $action );
+					$regex_action = preg_replace( array( '([/])', '(:[\w-]+)' ), array( '\/', '([\w-]+?)' ), $action );
 
 					$rules[] = array(
 						'regex' => "^{$post_path}\/{$regex_action}?$",
@@ -91,7 +93,7 @@ class Rewrites {
 		// minus pagination (e.g. /page/2/) to the mf_action
 		// query arg. It'll also add the correct pagination query arg.
 		$rules[] = array(
-			'regex' => "^{$post_path}\/([/\w]+?(?=\/page)?)(?:\/page\/([0-9]+))?$",
+			'regex' => "^{$post_path}\/(.+?(?=\/page)?)(?:\/page\/([0-9]+))?$",
 			'query' => 'index.php?page_id=' . $post_id . '&mf_action=$matches[1]&paged=$matches[2]',
 		);
 
