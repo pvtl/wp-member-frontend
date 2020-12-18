@@ -144,7 +144,7 @@ class Member_Frontend {
 	 * @return \WP
 	 */
 	public function parse_request_overrides( WP $request ) {
-		if ( isset( $request->query_vars['mf_action'] ) ) {
+		if ( isset( $request->query_vars['mf_action'] ) && $this->actions->is( 'get' ) ) {
 			$page = get_page_by_path( $request->request );
 
 			if ( $page && ! empty( $page->post_content ) ) {
