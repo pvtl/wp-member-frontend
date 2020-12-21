@@ -622,10 +622,7 @@ class MemberFrontend {
 				)
 			);
 
-			// translators: Password reset email subject. %s: Site name.
-			$title = sprintf( __( '[%s] Password Reset' ), $site_name );
-			$title = apply_filters( 'retrieve_password_title', $title, $user_login, $user_data );
-
+			$title   = 'Password Reset';
 			$message = apply_filters( 'retrieve_password_message', $message, $key, $user_login, $user_data );
 
 			wp_mail( $user_email, wp_specialchars_decode( $title ), $message );
