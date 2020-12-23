@@ -1,6 +1,6 @@
 {
   "name": "wp-member-frontend",
-  "version": "1.5.0",
+  "version": "1.8.0",
   "description": "WordPress Member Frontend assets",
   "license": "MIT",
   "main": "webpack.mix.js",
