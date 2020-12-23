@@ -17,5 +17,5 @@ indent_size = 4
 [*.php]
 indent_style = tab
 
-[{.jshintrc,*.json,*.yml}]
+[{*.js,.jshintrc,*.json,*.yml}]
 indent_size = 2

@@ -6,11 +6,11 @@
   "main": "webpack.mix.js",
   "scripts": {
     "dev": "npm run development",
-    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --config=node_modules/laravel-mix/setup/webpack.config.js",
     "watch": "npm run development -- --watch",
     "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
     "prod": "npm run production",
-    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --config=node_modules/laravel-mix/setup/webpack.config.js",
     "lint-js": "./node_modules/.bin/eslint -c .eslintrc.js assets/js/*.js assets/js/**/*.js"
   },
   "dependencies": {
@@ -18,8 +18,9 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.2",
-    "laravel-mix": "^5.0.9",
+    "laravel-mix": "^6.0.2",
     "laravel-mix-polyfill": "^2.0.0",
+    "postcss": "^8.1",
     "vue-template-compiler": "^2.6.12"
   }
 }

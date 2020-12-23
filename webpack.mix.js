@@ -6,8 +6,4 @@ const externals = { jquery: 'jQuery' };
 
 mix
   .webpackConfig({ externals })
-  .js('assets/src/js/app.js', 'assets/dist/js')
-  .polyfill({
-    enabled: true,
-    useBuiltIns: 'usage',
-  });
+  .js('assets/src/js/app.js', 'assets/dist/js');
