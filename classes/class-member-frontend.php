@@ -147,7 +147,7 @@ class Member_Frontend {
 		if ( isset( $request->query_vars['mf_action'] ) && $this->actions->is( 'get' ) ) {
 			$page = get_page_by_path( $request->request );
 
-			if ( $page && ! empty( $page->post_content ) ) {
+			if ( $page && apply_filters( 'mf_page_renders_content', ! empty( $page->post_content ), $page->ID ) ) {
 				$action = mf_url_to_action( $request->query_vars['mf_action'] );
 
 				$this->before_render( $action, true );
@@ -265,7 +265,7 @@ class Member_Frontend {
 		if ( ! is_user_logged_in() && ! in_array( $action, $allowed, true ) ) {
 			$this->set_flash( 'error', 'You must be logged in to access this area' );
 			$this->redirect(
-				'login',
+				apply_filters( 'mf_login_action', 'login', $action ),
 				array(
 					'redirect_to' => $this->url( $action ),
 				)
@@ -725,7 +725,7 @@ class Member_Frontend {
 
 		if ( ! $user || ! $valid ) {
 			$this->set_flash( 'error', 'Security token has expired' );
-			$this->redirect( 'login' );
+			$this->redirect( apply_filters( 'mf_login_action', 'login', 'reset_password', $user ) );
 		}
 
 		$new_password         = isset( $data['password'] ) ? $data['password'] : null;
@@ -741,7 +741,7 @@ class Member_Frontend {
 		reset_password( $user, $new_password );
 
 		$this->set_flash( 'success', 'Password reset successfully' );
-		$this->redirect( 'login' );
+		$this->redirect( apply_filters( 'mf_login_action', 'login', 'reset_password', $user ) );
 	}
 
 	/**
