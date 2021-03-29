@@ -17,10 +17,10 @@
     "jquery": "^3.5.1"
   },
   "devDependencies": {
-    "cross-env": "^7.0.2",
-    "laravel-mix": "^6.0.2",
-    "laravel-mix-polyfill": "^2.0.0",
-    "postcss": "^8.1",
+    "cross-env": "^7.0.3",
+    "laravel-mix": "^6.0.13",
+    "laravel-mix-polyfill": "^3.0.0",
+    "postcss": "^8.2",
     "vue-template-compiler": "^2.6.12"
   }
 }
