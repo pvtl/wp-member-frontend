@@ -336,7 +336,7 @@ class Member_Frontend {
 
 				return $view;
 			},
-			99
+			49
 		);
 	}
 
