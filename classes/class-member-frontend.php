@@ -1031,6 +1031,13 @@ class Member_Frontend {
 	 * Enqueue plugin assets.
 	 */
 	public function enqueue_assets() {
-		wp_enqueue_script( 'mf', plugin_dir_url( MF_PATH . '/member-frontend.php' ) . 'assets/dist/js/app.js', array( 'jquery' ), '1.0.0', true );
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+		wp_enqueue_script(
+			'mf',
+			MF_URL . mix( '/assets/dist/js/app.js' ),
+			array( 'jquery' ),
+			null,
+			true
+		);
 	}
 }

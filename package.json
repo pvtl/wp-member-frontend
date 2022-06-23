@@ -1,26 +1,20 @@
 {
   "name": "wp-member-frontend",
-  "version": "1.8.0",
+  "version": "1.10.0",
   "description": "WordPress Member Frontend assets",
   "license": "MIT",
   "main": "webpack.mix.js",
   "scripts": {
-    "dev": "npm run development",
-    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --config=node_modules/laravel-mix/setup/webpack.config.js",
-    "watch": "npm run development -- --watch",
-    "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
-    "prod": "npm run production",
-    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --config=node_modules/laravel-mix/setup/webpack.config.js",
-    "lint-js": "./node_modules/.bin/eslint -c .eslintrc.js assets/js/*.js assets/js/**/*.js"
+    "dev": "mix",
+    "watch": "mix watch",
+    "watch-poll": "mix watch -- --watch-options-poll=1000",
+    "hot": "mix watch --hot",
+    "prod": "mix --production"
   },
   "dependencies": {
-    "jquery": "^3.5.1"
+    "jquery": "^3.6.0"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "laravel-mix": "^6.0.13",
-    "laravel-mix-polyfill": "^3.0.0",
-    "postcss": "^8.2",
-    "vue-template-compiler": "^2.6.12"
+    "laravel-mix": "^6.0.13"
   }
 }

@@ -1,9 +1,7 @@
 const mix = require('laravel-mix');
-require('laravel-mix-polyfill');
 
-// Use external jQuery.
-const externals = { jquery: 'jQuery' };
-
-mix
-  .webpackConfig({ externals })
-  .js('assets/src/js/app.js', 'assets/dist/js');
+mix.setPublicPath('.')
+  .webpackConfig({ externals: { jquery: 'jQuery' } })
+  .js('assets/src/js/app.js', 'assets/dist/js')
+  .sourceMaps()
+  .version();

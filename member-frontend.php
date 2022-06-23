@@ -18,6 +18,9 @@ defined( 'ABSPATH' ) || die();
 // Path to plugin directory.
 define( 'MF_PATH', __DIR__ );
 
+// URL to plugin directory.
+define( 'MF_URL', rtrim( plugin_dir_url( __FILE__ ), '/' ) );
+
 // Autoload plugin classes.
 require_once MF_PATH . '/autoload.php';
 

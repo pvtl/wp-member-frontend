@@ -5,6 +5,42 @@
  * @package Member_Frontend
  */
 
+defined( 'ABSPATH' ) || die;
+
+/**
+ * Get the path to a versioned Mix file.
+ *
+ * @param string $path The path to the asset.
+ *
+ * @return string
+ * @throws \Exception If the asset is not found.
+ */
+function mix( $path ) {
+	static $manifests = array();
+
+	if ( strpos( $path, '/' ) !== 0 ) {
+		$path = "/{$path}";
+	}
+
+	$manifest_path = MF_PATH . '/mix-manifest.json';
+
+	if ( ! isset( $manifests[ $manifest_path ] ) ) {
+		if ( ! is_file( $manifest_path ) ) {
+			throw new Exception( 'The Mix manifest does not exist.' );
+		}
+
+		$manifests[ $manifest_path ] = json_decode( file_get_contents( $manifest_path ), true );
+	}
+
+	$manifest = $manifests[ $manifest_path ];
+
+	if ( ! isset( $manifest[ $path ] ) ) {
+		throw new Exception( "Unable to locate Mix file: {$path}." );
+	}
+
+	return $manifest[ $path ];
+}
+
 if ( ! function_exists( 'mf_select_options' ) ) {
 	/**
 	 * Fill <select> element with options with
