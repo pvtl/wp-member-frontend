@@ -57,6 +57,7 @@ class Admin {
 
 		$view = MF()->view( 'admin/settings', $vars );
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $view;
 	}
 

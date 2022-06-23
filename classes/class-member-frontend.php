@@ -100,7 +100,7 @@ class Member_Frontend {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 
 		// Catch failed login attempts.
-		add_action( 'wp_authenticate', array( $this, 'catch_empty_login' ), 1, 2 );
+		add_action( 'wp_authenticate', array( $this, 'catch_empty_login' ), 5, 2 );
 		add_action( 'wp_login_failed', array( $this, 'intercept_failed_login' ) );
 
 		// Remove the admin bar for members.
@@ -855,7 +855,7 @@ class Member_Frontend {
 	 * @param mixed  $data The flash data.
 	 */
 	public function set_flash( $name, $data ) {
-		$this->flash["mf_flash_{$name}"] = maybe_serialize( $data );
+		$this->flash[ "mf_flash_{$name}" ] = maybe_serialize( $data );
 
 		setcookie( "mf_flash_{$name}", maybe_serialize( $data ), time() + MINUTE_IN_SECONDS * 30, '/', '', is_ssl(), true );
 	}
@@ -868,7 +868,7 @@ class Member_Frontend {
 	 * @return bool
 	 */
 	public function has_flash( $name ) {
-		return isset( $this->flash["mf_flash_{$name}"] );
+		return isset( $this->flash[ "mf_flash_{$name}" ] );
 	}
 
 	/**
@@ -880,7 +880,7 @@ class Member_Frontend {
 	 * @return mixed
 	 */
 	public function get_flash( $name, $clear = true ) {
-		$data = $this->has_flash( $name ) ? $this->flash["mf_flash_{$name}"] : false;
+		$data = $this->has_flash( $name ) ? $this->flash[ "mf_flash_{$name}" ] : false;
 
 		if ( $data ) {
 			if ( $clear ) {
@@ -899,7 +899,7 @@ class Member_Frontend {
 	 * @param string $name The flash key.
 	 */
 	public function forget_flash( $name ) {
-		unset( $this->flash["mf_flash_{$name}"] );
+		unset( $this->flash[ "mf_flash_{$name}" ] );
 	}
 
 	/**
