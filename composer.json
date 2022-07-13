@@ -2,7 +2,7 @@
   "name": "pvtl/wp-member-frontend",
   "description": "A Wordpress Plugin for displaying Member Forms.",
   "homepage": "https://github.com/pvtl/wp-member-frontend",
-  "license": "GPL3",
+  "license": "MIT",
   "authors": [
     {
       "name": "Pivotal Agency",
